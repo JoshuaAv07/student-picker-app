@@ -6,7 +6,7 @@ import ProgressBar from './components/ProgressBar';
 import WinnerDisplay from './components/WinnerDisplay';
 import ActionButtons from './components/ActionButtons';
 import Instructions from './components/Instructions';
-import Confetti from './components/Confetti';
+/* import Confetti from './components/Confetti'; */
 import { parseCSV, parseTXT, loadFromStorage, saveToStorage, clearFromStorage } from './utils/helpers';
 import './styles/global.css';
 import './styles/animations.css';
@@ -18,7 +18,7 @@ const App: React.FC = () => {
   const [selectedStudent, setSelectedStudent] = useState<string>('');
   const [isSpinning, setIsSpinning] = useState(false);
   const [uploadedFileName, setUploadedFileName] = useState<string>('');
-  const [showConfetti, setShowConfetti] = useState(false);
+  /* const [showConfetti, setShowConfetti] = useState(false); */
 
   // Load state from localStorage on mount
   useEffect(() => {
@@ -109,9 +109,9 @@ const App: React.FC = () => {
       setSelectedStudent(chosen);
       setRemainingStudents(updated);
       setIsSpinning(false);
-      setShowConfetti(true);
+      /* setShowConfetti(true);
 
-      setTimeout(() => setShowConfetti(false), 3000);
+      setTimeout(() => setShowConfetti(false), 3000); */
     }, 2000);
   };
 

@@ -1,0 +1,16 @@
+.app-container {
+  min-height: 100vh;
+  background-color: #808080;
+  padding: 1.5rem;
+}
+
+.app-content {
+  max-width: 64rem;
+  margin: 0 auto;
+}
+
+@media (max-width: 768px) {
+  .app-container {
+    padding: 1rem;
+  }
+}

@@ -1,0 +1,80 @@
+.action-buttons-container {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+
+.pick-button,
+.reset-button {
+  font-weight: 700;
+  padding: 1.75rem 2rem;
+  border-radius: 1rem;
+  transition: all 0.2s;
+  transform: scale(1);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  border: 4px solid #800000;
+  cursor: pointer;
+}
+
+.pick-button {
+  font-size: 1.5rem;
+  font-weight: 900;
+  background: #fffbf0;
+  color: #800000;
+  font-family: 'Lora', serif;
+}
+
+.pick-button:not(.disabled):hover {
+  background: #fff5e6;
+  transform: scale(1.03);
+}
+
+.pick-button:not(.disabled):active {
+  transform: scale(0.95);
+}
+
+.reset-button {
+  font-size: 1.25rem;
+  background: linear-gradient(to bottom right, #fffbf0, #fff5e6);
+  color: #800000;
+}
+
+.reset-button:not(.disabled):hover {
+  background: linear-gradient(to bottom right, #fff5e6, #fed7aa);
+  transform: scale(1.03);
+}
+
+.reset-button:not(.disabled):active {
+  transform: scale(0.95);
+}
+
+.reset-button-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.pick-button.disabled,
+.reset-button.disabled {
+  background: #d1d5db;
+  color: #6b7280;
+  border-color: #9ca3af;
+  cursor: not-allowed;
+}
+
+@media (max-width: 768px) {
+  .action-buttons-container {
+    grid-template-columns: 1fr;
+  }
+  
+  .pick-button {
+    font-size: 1.25rem;
+    padding: 1.5rem 1.5rem;
+  }
+  
+  .reset-button {
+    font-size: 1rem;
+    padding: 1.5rem 1.5rem;
+  }
+}

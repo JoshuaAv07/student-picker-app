@@ -1,0 +1,54 @@
+.winner-display {
+  background: linear-gradient(to bottom right, #fffbf0, #fff5e6);
+  border-radius: 1.5rem;
+  padding: 2.5rem;
+  margin-bottom: 1.5rem;
+  text-align: center;
+  border: 8px solid #800000;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.winner-header {
+  font-size: 1.875rem;
+  font-weight: 700;
+  color: #800000;
+  margin-bottom: 1rem;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
+}
+
+.winner-name {
+  font-size: 4.5rem;
+  font-weight: 900;
+  color: #800000;
+  margin-bottom: 0.75rem;
+  font-family: 'Lora', serif;
+  text-shadow: 3px 3px 0px rgba(128, 0, 0, 0.1);
+  line-height: 1.2;
+}
+
+.winner-complete-message {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #800000;
+  margin-top: 1rem;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
+}
+
+@media (max-width: 768px) {
+  .winner-display {
+    padding: 1.5rem;
+    border: 6px solid #800000;
+  }
+  
+  .winner-header {
+    font-size: 1.25rem;
+  }
+  
+  .winner-name {
+    font-size: 2.5rem;
+  }
+  
+  .winner-complete-message {
+    font-size: 1rem;
+  }
+}

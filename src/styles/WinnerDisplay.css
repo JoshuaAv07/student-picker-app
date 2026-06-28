@@ -27,6 +27,88 @@
   line-height: 1.1;
 }
 
+.winner-points {
+  margin-top: 0.75rem;
+  font-size: 0.92rem;
+  color: var(--header-sub);
+}
+
+.winner-points strong {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  color: var(--header-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.winner-question-phase {
+  margin-top: 1.25rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  text-align: center;
+}
+
+.winner-question-prompt {
+  font-size: 0.92rem;
+  color: var(--header-sub);
+  margin-bottom: 1rem;
+  line-height: 1.5;
+}
+
+.ready-to-grade-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 1.25rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--header-text);
+  cursor: pointer;
+  transition: background 0.2s var(--ease), border-color 0.2s var(--ease);
+}
+
+.ready-to-grade-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.ready-to-grade-btn:focus-visible {
+  outline: 2px solid var(--header-text);
+  outline-offset: 2px;
+}
+
+.winner-points-updated {
+  margin-top: 0.5rem;
+  font-size: 0.92rem;
+  color: var(--header-sub);
+}
+
+.winner-points-updated strong {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  color: var(--header-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.winner-scored-hint {
+  margin-top: 1rem;
+  font-size: 0.78rem;
+  color: var(--header-meta);
+  letter-spacing: 0.02em;
+}
+
+.winner-feedback {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--header-sub);
+}
+
 .winner-complete-message {
   margin-top: 1rem;
   padding-top: 1rem;

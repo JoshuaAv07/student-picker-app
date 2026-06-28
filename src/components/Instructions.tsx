@@ -4,17 +4,15 @@ import '../styles/Instructions.css';
 const Instructions: React.FC = () => {
   return (
     <div className="instructions-container slide-up" style={{ animationDelay: '0.5s' }}>
-      <h3 className="instructions-title">
-        <span className="instructions-icon">📋</span>
-        How to use:
-      </h3>
+      <h3 className="instructions-title">How to use</h3>
       <ol className="instructions-list">
-        <li>Upload a CSV or TXT file with student names</li>
-        <li>CSV files should have a "name" column</li>
-        <li>TXT files should have one name per line</li>
-        <li>Click "Pick Student" to randomly select a student</li>
-        <li>Each student is picked only once until everyone has participated</li>
-        <li>The list automatically resets when all students have been picked</li>
+        <li>Enter a name like <strong>Web Design</strong> or <strong>Big Data</strong>, then upload — the group is saved automatically</li>
+        <li>Upload your second class with <strong>+ Add new group</strong>; both stay saved in the browser</li>
+        <li>Use the <strong>Saved groups</strong> dropdown to switch between classes</li>
+        <li>Click <strong>Pick Student</strong> — their current grade is assigned</li>
+        <li>Ask your question, then click <strong>Ready to grade</strong></li>
+        <li>Mark the answer: <strong>Correct (+1)</strong>, <strong>Wrong (−1)</strong>, or <strong>Neutral (0)</strong></li>
+        <li>Pick again for the next student, or <strong>Reset Round</strong> when everyone has gone</li>
       </ol>
     </div>
   );

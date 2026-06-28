@@ -1,18 +1,16 @@
 .stats-container {
-  display: flex;
-  gap: 1.5rem;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
   margin-bottom: 1.25rem;
   padding: 1.25rem 1.5rem;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  flex-wrap: wrap;
 }
 
 .stat-card {
-  flex: 1;
-  min-width: 120px;
-  text-align: left;
+  text-align: center;
 }
 
 .stat-icon-wrapper {
@@ -39,7 +37,6 @@
 
 @media (max-width: 768px) {
   .stats-container {
-    flex-direction: column;
-    gap: 1rem;
+    grid-template-columns: repeat(2, 1fr);
   }
 }

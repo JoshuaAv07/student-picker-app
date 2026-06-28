@@ -7,34 +7,44 @@ interface ActionButtonsProps {
   onReset: () => void;
   isSpinning: boolean;
   hasStudents: boolean;
+  disabled?: boolean;
 }
 
-const ActionButtons: React.FC<ActionButtonsProps> = ({ 
-  onPickStudent, 
-  onReset, 
-  isSpinning, 
-  hasStudents 
+const ActionButtons: React.FC<ActionButtonsProps> = ({
+  onPickStudent,
+  onReset,
+  isSpinning,
+  hasStudents,
+  disabled = false,
 }) => {
+  const pickDisabled = disabled || isSpinning || !hasStudents;
+
+  const pickLabel = isSpinning
+    ? 'Selecting...'
+    : disabled
+      ? 'Finish current student first'
+      : 'Pick Student';
+
   return (
     <div className="action-buttons-container slide-up" style={{ animationDelay: '0.4s' }}>
       <button
         type="button"
         onClick={onPickStudent}
-        disabled={isSpinning || !hasStudents}
+        disabled={pickDisabled}
         className="pick-button"
       >
-        {isSpinning ? 'Selecting...' : 'Pick Student'}
+        {pickLabel}
       </button>
 
       <button
         type="button"
         onClick={onReset}
-        disabled={!hasStudents}
+        disabled={!hasStudents || isSpinning || disabled}
         className="reset-button"
       >
         <div className="reset-button-content">
           <RotateCw size={24} />
-          Reset List
+          Reset Round
         </div>
       </button>
     </div>

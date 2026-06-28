@@ -33,6 +33,41 @@
   color: var(--text);
 }
 
+.field-label {
+  display: block;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 0.35rem;
+}
+
+.group-name-input,
+.group-select {
+  width: 100%;
+  padding: 0.65rem 0.75rem;
+  margin-bottom: 1rem;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  border-radius: var(--radius);
+  transition: border-color 0.2s var(--ease);
+}
+
+.group-name-input:focus,
+.group-select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-dim);
+}
+
+.group-select {
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
 .file-input {
   display: none;
 }
@@ -89,6 +124,19 @@
   border: 1px solid var(--border);
   background: var(--surface);
   border-radius: var(--radius);
+}
+
+.upload-hint {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin-bottom: 1rem;
+}
+
+.saved-group-file {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-bottom: 0.75rem;
 }
 
 @media (max-width: 768px) {

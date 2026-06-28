@@ -1,170 +1,299 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Header from './components/Header';
-import FileUpload from './components/FileUpload';
+import GroupUpload from './components/GroupUpload';
+import GradeManager from './components/GradeManager';
 import Stats from './components/Stats';
 import ProgressBar from './components/ProgressBar';
-import WinnerDisplay from './components/WinnerDisplay';
+import WinnerDisplay, { ParticipationPhase } from './components/WinnerDisplay';
 import ActionButtons from './components/ActionButtons';
 import Instructions from './components/Instructions';
-/* import Confetti from './components/Confetti'; */
-import { parseCSV, parseTXT, loadFromStorage, saveToStorage, clearFromStorage } from './utils/helpers';
+import { AnswerResult, AppData, GradeGroup } from './types';
+import {
+  averagePoints,
+  createGradeGroup,
+  createStudent,
+  getActiveGrade,
+  getStudentById,
+  groupNameFromFile,
+  loadAppData,
+  parseCSV,
+  parseTXT,
+  saveAppData,
+} from './utils/helpers';
 import './styles/global.css';
 import './styles/animations.css';
 import './styles/App.css';
 
+const POINT_DELTA: Record<AnswerResult, number> = {
+  correct: 1,
+  wrong: -1,
+  neutral: 0,
+};
+
+const FEEDBACK_LABEL: Record<AnswerResult, string> = {
+  correct: 'Correct — +1 point',
+  wrong: 'Wrong — −1 point',
+  neutral: 'Neutral — no change',
+};
+
+const updateGradeInData = (
+  data: AppData,
+  gradeId: string,
+  updater: (grade: GradeGroup) => GradeGroup
+): AppData => ({
+  ...data,
+  gradeGroups: data.gradeGroups.map(g =>
+    g.id === gradeId ? updater(g) : g
+  ),
+});
+
 const App: React.FC = () => {
-  const [allStudents, setAllStudents] = useState<string[]>([]);
-  const [remainingStudents, setRemainingStudents] = useState<string[]>([]);
-  const [selectedStudent, setSelectedStudent] = useState<string>('');
+  const [appData, setAppData] = useState<AppData>(() => loadAppData());
+  const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
+  const [pointsAtPick, setPointsAtPick] = useState<number | null>(null);
+  const [participationPhase, setParticipationPhase] = useState<ParticipationPhase | null>(null);
   const [isSpinning, setIsSpinning] = useState(false);
-  const [uploadedFileName, setUploadedFileName] = useState<string>('');
-  /* const [showConfetti, setShowConfetti] = useState(false); */
+  const [lastFeedback, setLastFeedback] = useState<string | null>(null);
 
-  // Load state from localStorage on mount
-  useEffect(() => {
-    const savedAll = loadFromStorage('allStudents');
-    const savedRemaining = loadFromStorage('remainingStudents');
-    
-    if (savedAll) setAllStudents(savedAll);
-    if (savedRemaining) setRemainingStudents(savedRemaining);
-  }, []);
-
-  // Save state to localStorage when it changes
-  useEffect(() => {
-    if (allStudents.length > 0) {
-      saveToStorage('allStudents', allStudents);
-    }
-  }, [allStudents]);
+  const activeGrade = getActiveGrade(appData);
 
   useEffect(() => {
-    if (remainingStudents.length > 0) {
-      saveToStorage('remainingStudents', remainingStudents);
-    }
-  }, [remainingStudents]);
+    saveAppData(appData);
+  }, [appData]);
 
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+  const clearPickState = () => {
+    setSelectedStudentId(null);
+    setPointsAtPick(null);
+    setParticipationPhase(null);
+    setIsSpinning(false);
+    setLastFeedback(null);
+  };
 
-    setUploadedFileName(file.name);
+  const setActiveGradeId = (gradeId: string) => {
+    setAppData(prev => ({ ...prev, activeGradeId: gradeId }));
+    clearPickState();
+  };
+
+  const handleGroupUpload = async (file: File, groupName: string) => {
+    clearPickState();
 
     try {
       const text = await file.text();
-      let students: string[] = [];
+      let rows;
 
       if (file.name.endsWith('.csv')) {
-        students = parseCSV(text);
+        rows = parseCSV(text);
       } else if (file.name.endsWith('.txt')) {
-        students = parseTXT(text);
+        rows = parseTXT(text);
       } else {
         throw new Error('Unsupported file format. Use CSV or TXT.');
       }
 
-      if (students.length === 0) {
+      if (rows.length === 0) {
         throw new Error('No students found in file');
       }
 
-      setAllStudents(students);
-      setRemainingStudents(students);
-      setSelectedStudent('');
-      clearFromStorage('remainingStudents');
-      
+      const name = groupName.trim() || groupNameFromFile(file.name);
+      const students = rows.map(row => createStudent(row.name, row.points));
+      const studentIds = students.map(s => s.id);
+
+      setAppData(prev => {
+        const existing = prev.gradeGroups.find(
+          g => g.name.toLowerCase() === name.toLowerCase()
+        );
+
+        if (existing) {
+          return {
+            ...prev,
+            activeGradeId: existing.id,
+            gradeGroups: prev.gradeGroups.map(g =>
+              g.id === existing.id
+                ? {
+                    ...g,
+                    name,
+                    students,
+                    remainingStudentIds: studentIds,
+                    sourceFileName: file.name,
+                  }
+                : g
+            ),
+          };
+        }
+
+        const grade = createGradeGroup(name);
+        grade.students = students;
+        grade.remainingStudentIds = studentIds;
+        grade.sourceFileName = file.name;
+
+        return {
+          gradeGroups: [...prev.gradeGroups, grade],
+          activeGradeId: grade.id,
+        };
+      });
     } catch (error) {
       alert(`Error: ${error instanceof Error ? error.message : 'Failed to read file'}`);
     }
   };
 
   const pickStudent = () => {
-    if (allStudents.length === 0) {
-      alert('Please upload a student list first!');
+    if (!activeGrade || activeGrade.students.length === 0) {
+      alert('Upload a group list first!');
       return;
     }
 
-    let studentsToPickFrom = remainingStudents;
+    let poolIds = activeGrade.remainingStudentIds;
 
-    // Reset if all students have been picked
-    if (studentsToPickFrom.length === 0) {
-      studentsToPickFrom = [...allStudents];
-      setRemainingStudents(studentsToPickFrom);
-      clearFromStorage('remainingStudents');
+    if (poolIds.length === 0) {
+      poolIds = activeGrade.students.map(s => s.id);
+      setAppData(prev =>
+        updateGradeInData(prev, activeGrade.id, grade => ({
+          ...grade,
+          remainingStudentIds: poolIds,
+        }))
+      );
     }
 
-    setIsSpinning(true);
+    const poolStudents = poolIds
+      .map(id => getStudentById(activeGrade, id))
+      .filter((s): s is NonNullable<typeof s> => s !== undefined);
 
-    // Simulate spinning animation
+    if (poolStudents.length === 0) return;
+
+    setIsSpinning(true);
+    setParticipationPhase(null);
+    setLastFeedback(null);
+
     const spinInterval = setInterval(() => {
-      const randomStudent = studentsToPickFrom[Math.floor(Math.random() * studentsToPickFrom.length)];
-      setSelectedStudent(randomStudent);
+      const random = poolStudents[Math.floor(Math.random() * poolStudents.length)];
+      setSelectedStudentId(random.id);
     }, 100);
 
-    // Stop after animation
     setTimeout(() => {
       clearInterval(spinInterval);
-      
-      const chosen = studentsToPickFrom[Math.floor(Math.random() * studentsToPickFrom.length)];
-      const updated = studentsToPickFrom.filter(s => s !== chosen);
-      
-      setSelectedStudent(chosen);
-      setRemainingStudents(updated);
-      setIsSpinning(false);
-      /* setShowConfetti(true);
 
-      setTimeout(() => setShowConfetti(false), 3000); */
+      const chosen = poolStudents[Math.floor(Math.random() * poolStudents.length)];
+      setSelectedStudentId(chosen.id);
+      setPointsAtPick(chosen.points);
+      setParticipationPhase('asking');
+      setIsSpinning(false);
     }, 2000);
   };
 
-  const resetList = () => {
-    if (allStudents.length === 0) return;
-    
-    setRemainingStudents([...allStudents]);
-    setSelectedStudent('');
-    clearFromStorage('remainingStudents');
+  const handleStartGrading = () => {
+    setParticipationPhase('grading');
   };
 
-  const progress = allStudents.length > 0 
-    ? ((allStudents.length - remainingStudents.length) / allStudents.length) * 100 
-    : 0;
+  const handleAnswer = useCallback((result: AnswerResult) => {
+    if (!activeGrade || !selectedStudentId || participationPhase !== 'grading' || pointsAtPick === null) {
+      return;
+    }
+
+    const delta = POINT_DELTA[result];
+    const student = getStudentById(activeGrade, selectedStudentId);
+    if (!student) return;
+
+    const newPoints = student.points + delta;
+    const newRemaining = activeGrade.remainingStudentIds.filter(id => id !== selectedStudentId);
+    let feedback = `${student.name}: ${FEEDBACK_LABEL[result]} (${pointsAtPick} → ${newPoints} pts)`;
+    if (newRemaining.length === 0) {
+      feedback += ' — All students have participated this round!';
+    }
+
+    setAppData(prev =>
+      updateGradeInData(prev, activeGrade.id, grade => ({
+        ...grade,
+        students: grade.students.map(s =>
+          s.id === selectedStudentId
+            ? { ...s, points: s.points + delta }
+            : s
+        ),
+        remainingStudentIds: newRemaining,
+      }))
+    );
+
+    setLastFeedback(feedback);
+    setParticipationPhase('done');
+  }, [activeGrade, selectedStudentId, participationPhase, pointsAtPick]);
+
+  const resetList = () => {
+    if (!activeGrade || activeGrade.students.length === 0) return;
+
+    setAppData(prev =>
+      updateGradeInData(prev, activeGrade.id, grade => ({
+        ...grade,
+        remainingStudentIds: grade.students.map(s => s.id),
+      }))
+    );
+    clearPickState();
+  };
+
+  const selectedStudent = selectedStudentId && activeGrade
+    ? getStudentById(activeGrade, selectedStudentId)
+    : undefined;
+
+  const students = activeGrade?.students ?? [];
+  const remainingCount = activeGrade?.remainingStudentIds.length ?? 0;
+  const totalCount = students.length;
+  const participatedCount = totalCount - remainingCount;
+  const progress = totalCount > 0 ? (participatedCount / totalCount) * 100 : 0;
+  const hasGroups = appData.gradeGroups.length > 0;
+  const participationInProgress = participationPhase === 'asking' || participationPhase === 'grading';
 
   return (
     <div className="app-container">
-      {/* <Confetti show={showConfetti} /> */}
-
       <div className="app-content">
         <Header />
 
-        <FileUpload 
-          onFileUpload={handleFileUpload}
-          uploadedFileName={uploadedFileName}
+        <GroupUpload
+          gradeGroups={appData.gradeGroups}
+          activeGradeId={appData.activeGradeId}
+          onSelectGroup={setActiveGradeId}
+          onUpload={handleGroupUpload}
         />
 
-        {allStudents.length > 0 && (
-          <>
-            <Stats 
-              totalStudents={allStudents.length}
-              remainingStudents={remainingStudents.length}
-              selectedCount={allStudents.length - remainingStudents.length}
-            />
+        <GradeManager
+          gradeGroups={appData.gradeGroups}
+          activeGradeId={appData.activeGradeId}
+          onSelectGroup={setActiveGradeId}
+        />
 
+        {activeGrade && totalCount > 0 && (
+          <>
+            <Stats
+              totalStudents={totalCount}
+              remainingStudents={remainingCount}
+              selectedCount={participatedCount}
+              averagePoints={averagePoints(students)}
+            />
             <ProgressBar progress={progress} />
           </>
         )}
 
-        {selectedStudent && (
-          <WinnerDisplay 
-            selectedStudent={selectedStudent}
+        {selectedStudent && pointsAtPick !== null && participationPhase && (
+          <WinnerDisplay
+            studentName={selectedStudent.name}
+            pointsAtPick={pointsAtPick}
+            currentPoints={selectedStudent.points}
             isSpinning={isSpinning}
-            allPicked={remainingStudents.length === 0}
+            phase={participationPhase}
+            onStartGrading={handleStartGrading}
+            onAnswer={handleAnswer}
           />
         )}
 
-        <ActionButtons 
+        {lastFeedback && (
+          <div className="feedback-banner slide-up">{lastFeedback}</div>
+        )}
+
+        <ActionButtons
           onPickStudent={pickStudent}
           onReset={resetList}
           isSpinning={isSpinning}
-          hasStudents={allStudents.length > 0}
+          hasStudents={totalCount > 0}
+          disabled={participationInProgress}
         />
 
-        {allStudents.length === 0 && <Instructions />}
+        {!hasGroups && <Instructions />}
       </div>
 
       <footer className="app-footer">

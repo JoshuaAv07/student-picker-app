@@ -3,14 +3,12 @@ import '../styles/Header.css';
 
 const Header: React.FC = () => {
   return (
-    <div className="header slide-up">
+    <header className="header slide-up">
       <div className="header-box">
-        <h1 className="header-title">
-          🎓 Student Picker
-        </h1>
+        <h1 className="header-title">Student Picker</h1>
+        <p className="header-subtitle">A warm approach to classroom participation</p>
       </div>
-      <p className="header-subtitle">A warm approach to classroom participation</p>
-    </div>
+    </header>
   );
 };
 

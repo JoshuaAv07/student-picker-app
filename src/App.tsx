@@ -166,6 +166,10 @@ const App: React.FC = () => {
 
         {allStudents.length === 0 && <Instructions />}
       </div>
+
+      <footer className="app-footer">
+        <strong>Student Picker</strong> · Classroom participation tool
+      </footer>
     </div>
   );
 };

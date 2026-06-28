@@ -1,16 +1,33 @@
 .app-container {
+  display: flex;
+  flex-direction: column;
   min-height: 100vh;
-  background-color: #808080;
-  padding: 1.5rem;
 }
 
 .app-content {
-  max-width: 64rem;
+  flex: 1;
+  max-width: 1180px;
   margin: 0 auto;
+  width: 100%;
+  padding: 0 1.5rem 3rem;
+}
+
+.app-footer {
+  background: var(--header-bg);
+  color: var(--header-meta);
+  padding: 1rem 1.5rem;
+  text-align: center;
+  font-size: 0.72rem;
+  letter-spacing: 0.03em;
+}
+
+.app-footer strong {
+  color: var(--header-sub);
+  font-weight: 600;
 }
 
 @media (max-width: 768px) {
-  .app-container {
-    padding: 1rem;
+  .app-content {
+    padding: 0 1rem 3rem;
   }
 }

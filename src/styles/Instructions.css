@@ -1,34 +1,32 @@
 .instructions-container {
-  background: linear-gradient(to bottom right, #fffbf0, #fff5e6);
-  border-radius: 1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
   padding: 1.5rem;
-  margin-top: 1.5rem;
-  border: 4px solid #800000;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  margin-top: 1.25rem;
 }
 
 .instructions-title {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
   font-weight: 700;
-  font-size: 1.25rem;
-  color: #800000;
-  margin-bottom: 1rem;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--text);
+  margin-bottom: 1.15rem;
 }
 
 .instructions-icon {
-  background: #800000;
-  color: #fffbf0;
-  padding: 0.25rem 0.75rem;
-  border-radius: 0.5rem;
+  display: none;
 }
 
 .instructions-list {
-  list-style-position: inside;
+  list-style-position: outside;
   list-style-type: decimal;
-  color: #1f2937;
-  font-size: 1rem;
+  padding-left: 1.25rem;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  line-height: 1.55;
 }
 
 .instructions-list li {
@@ -41,14 +39,6 @@
 
 @media (max-width: 768px) {
   .instructions-container {
-    padding: 1rem;
-  }
-  
-  .instructions-title {
-    font-size: 1.125rem;
-  }
-  
-  .instructions-list {
-    font-size: 0.875rem;
+    padding: 1.25rem;
   }
 }

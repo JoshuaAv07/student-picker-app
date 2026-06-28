@@ -18,17 +18,19 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
   return (
     <div className="action-buttons-container slide-up" style={{ animationDelay: '0.4s' }}>
       <button
+        type="button"
         onClick={onPickStudent}
         disabled={isSpinning || !hasStudents}
-        className={`pick-button ${isSpinning || !hasStudents ? 'disabled' : ''}`}
+        className="pick-button"
       >
-        {isSpinning ? '📖 Selecting...' : '✨ Pick Student'}
+        {isSpinning ? 'Selecting...' : 'Pick Student'}
       </button>
 
       <button
+        type="button"
         onClick={onReset}
         disabled={!hasStudents}
-        className={`reset-button ${!hasStudents ? 'disabled' : ''}`}
+        className="reset-button"
       >
         <div className="reset-button-content">
           <RotateCw size={24} />

@@ -92,11 +92,9 @@ const App: React.FC = () => {
     setIsSpinning(true);
 
     // Simulate spinning animation
-    //let counter = 0;
     const spinInterval = setInterval(() => {
       const randomStudent = studentsToPickFrom[Math.floor(Math.random() * studentsToPickFrom.length)];
       setSelectedStudent(randomStudent);
-      //counter++;
     }, 100);
 
     // Stop after animation

@@ -19,21 +19,53 @@ const GroupUpload: React.FC<GroupUploadProps> = ({
   onUpload,
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const prevGroupCountRef = useRef(gradeGroups.length);
+  const prevActiveGradeIdRef = useRef(activeGradeId);
   const hasSavedGroups = gradeGroups.length > 0;
 
   const [selection, setSelection] = useState<string>(activeGradeId ?? NEW_GROUP);
   const [groupName, setGroupName] = useState('');
 
+  const isNewGroup = selection === NEW_GROUP;
+
   useEffect(() => {
     if (gradeGroups.length === 0) {
       setSelection(NEW_GROUP);
       setGroupName('');
-    } else if (activeGradeId) {
+      return;
+    }
+
+    if (activeGradeId && selection !== NEW_GROUP) {
       setSelection(activeGradeId);
     }
-  }, [activeGradeId, gradeGroups.length]);
+  }, [activeGradeId, gradeGroups.length, selection]);
 
-  const isNewGroup = selection === NEW_GROUP;
+  useEffect(() => {
+    const groupAdded = gradeGroups.length > prevGroupCountRef.current;
+    if (isNewGroup && groupAdded && activeGradeId) {
+      setSelection(activeGradeId);
+      setGroupName('');
+    }
+    prevGroupCountRef.current = gradeGroups.length;
+  }, [gradeGroups.length, activeGradeId, isNewGroup]);
+
+  useEffect(() => {
+    const activeGradeChanged = activeGradeId !== prevActiveGradeIdRef.current;
+    const groupCountUnchanged = gradeGroups.length === prevGroupCountRef.current;
+
+    if (
+      isNewGroup
+      && activeGradeChanged
+      && groupCountUnchanged
+      && activeGradeId
+      && prevActiveGradeIdRef.current !== null
+    ) {
+      setSelection(activeGradeId);
+      setGroupName('');
+    }
+
+    prevActiveGradeIdRef.current = activeGradeId;
+  }, [activeGradeId, gradeGroups.length, isNewGroup]);
 
   const handleSelectionChange = (value: string) => {
     setSelection(value);
@@ -71,10 +103,17 @@ const GroupUpload: React.FC<GroupUploadProps> = ({
     }
   };
 
+  const openFilePicker = () => {
+    fileInputRef.current?.click();
+  };
+
   const selectedGroup = gradeGroups.find(g => g.id === selection);
-  const uploadLabel = hasSavedGroups && !isNewGroup && selectedGroup
-    ? `Upload to ${selectedGroup.name}`
-    : 'Choose CSV or TXT File';
+
+  const uploadLabel = isNewGroup
+    ? 'Upload new group'
+    : hasSavedGroups && selectedGroup
+      ? `Upload to ${selectedGroup.name}`
+      : 'Choose CSV or TXT File';
 
   return (
     <div className="file-upload-container slide-up" style={{ animationDelay: '0.1s' }}>
@@ -144,15 +183,19 @@ const GroupUpload: React.FC<GroupUploadProps> = ({
         accept=".csv,.txt"
         onChange={handleFileChange}
         className="file-input"
-        id="file-upload"
+        id="group-file-upload"
       />
 
-      <label htmlFor="file-upload" className="file-upload-label">
+      <button
+        type="button"
+        className="file-upload-label"
+        onClick={openFilePicker}
+      >
         <div className="file-upload-button-content">
           <Upload size={24} />
           {uploadLabel}
         </div>
-      </label>
+      </button>
     </div>
   );
 };

@@ -76,6 +76,7 @@
   display: block;
   width: 100%;
   cursor: pointer;
+  font-family: inherit;
   background: var(--accent);
   color: var(--accent-on);
   font-weight: 600;

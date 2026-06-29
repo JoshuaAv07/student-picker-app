@@ -8,7 +8,9 @@ export type ParticipationPhase = 'asking' | 'grading' | 'done';
 interface WinnerDisplayProps {
   studentName: string;
   gradeInput: string;
+  fridayPointsAtPick: number | null;
   livesAtPick: number | null;
+  currentFridayPoints: number;
   currentLives: number;
   isSpinning: boolean;
   phase: ParticipationPhase;
@@ -20,7 +22,9 @@ interface WinnerDisplayProps {
 const WinnerDisplay: React.FC<WinnerDisplayProps> = ({
   studentName,
   gradeInput,
+  fridayPointsAtPick,
   livesAtPick,
+  currentFridayPoints,
   currentLives,
   isSpinning,
   phase,
@@ -39,7 +43,9 @@ const WinnerDisplay: React.FC<WinnerDisplayProps> = ({
     onGradeInputChange(String(Number.isNaN(current) ? delta : current + delta));
   };
 
-  const livesChanged = phase === 'done' && livesAtPick !== null && currentLives !== livesAtPick;
+  const fridayChanged = fridayPointsAtPick !== null && currentFridayPoints !== fridayPointsAtPick;
+  const livesChanged = livesAtPick !== null && currentLives !== livesAtPick;
+  const scoresChanged = phase === 'done' && (fridayChanged || livesChanged);
 
   return (
     <div className={`winner-display bounce-in ${!isSpinning ? 'winner-card' : ''}`}>
@@ -49,44 +55,55 @@ const WinnerDisplay: React.FC<WinnerDisplayProps> = ({
       {!isSpinning && (
         <>
           {phase === 'asking' && (
-            <div className="winner-grade-input-wrap">
-              <label className="winner-grade-label" htmlFor="assigned-grade">
-                Lives
-              </label>
-              <div className="winner-grade-controls">
-                <button
-                  type="button"
-                  className="grade-step-btn"
-                  onClick={() => adjustGrade(-1)}
-                  aria-label="Decrease lives by 1"
-                >
-                  −
-                </button>
-                <input
-                  id="assigned-grade"
-                  type="text"
-                  inputMode="numeric"
-                  autoComplete="off"
-                  value={gradeInput}
-                  onChange={e => handleGradeChange(e.target.value)}
-                  placeholder="10"
-                  className="winner-grade-input"
-                />
-                <button
-                  type="button"
-                  className="grade-step-btn"
-                  onClick={() => adjustGrade(1)}
-                  aria-label="Increase lives by 1"
-                >
-                  +
-                </button>
+            <>
+              <div className="winner-score-row">
+                <span className="winner-score-label">Lives</span>
+                <strong>{currentLives}</strong>
               </div>
-            </div>
+              <div className="winner-grade-input-wrap">
+                <label className="winner-grade-label" htmlFor="assigned-grade">
+                  Friday pts
+                </label>
+                <div className="winner-grade-controls">
+                  <button
+                    type="button"
+                    className="grade-step-btn"
+                    onClick={() => adjustGrade(-1)}
+                    aria-label="Decrease Friday points by 1"
+                  >
+                    −
+                  </button>
+                  <input
+                    id="assigned-grade"
+                    type="text"
+                    inputMode="numeric"
+                    autoComplete="off"
+                    value={gradeInput}
+                    onChange={e => handleGradeChange(e.target.value)}
+                    placeholder="0"
+                    className="winner-grade-input"
+                  />
+                  <button
+                    type="button"
+                    className="grade-step-btn"
+                    onClick={() => adjustGrade(1)}
+                    aria-label="Increase Friday points by 1"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+            </>
           )}
 
-          {(phase === 'grading' || phase === 'done') && livesAtPick !== null && (
-            <div className="winner-points">
-              Lives at pick: <strong>{livesAtPick}</strong>
+          {(phase === 'grading' || phase === 'done') && fridayPointsAtPick !== null && livesAtPick !== null && (
+            <div className="winner-score-summary">
+              <div className="winner-points">
+                Friday pts at pick: <strong>{fridayPointsAtPick}</strong>
+              </div>
+              <div className="winner-points">
+                Lives at pick: <strong>{livesAtPick}</strong>
+              </div>
             </div>
           )}
 
@@ -99,19 +116,24 @@ const WinnerDisplay: React.FC<WinnerDisplayProps> = ({
             </div>
           )}
 
-          {phase === 'grading' && (
-            <AnswerButtons onAnswer={onAnswer} disabled={false} currentLives={livesAtPick ?? currentLives} />
+          {phase === 'grading' && fridayPointsAtPick !== null && (
+            <AnswerButtons
+              onAnswer={onAnswer}
+              disabled={false}
+              fridayPointsAtPick={fridayPointsAtPick}
+              currentLives={currentLives}
+            />
           )}
 
-          {livesChanged && (
+          {scoresChanged && (
             <div className="winner-points-updated">
-              Updated lives: <strong>{currentLives}</strong>
+              Updated — Friday pts: <strong>{currentFridayPoints}</strong>, Lives: <strong>{currentLives}</strong>
             </div>
           )}
 
           {phase === 'done' && (
             <p className="winner-scored-hint">
-              Lives recorded. Pick again for the next student.
+              Scores recorded. Pick again for the next student.
             </p>
           )}
         </>

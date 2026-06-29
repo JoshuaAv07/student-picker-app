@@ -3,48 +3,141 @@ import { AppData, AnswerResult, GradeGroup, ParsedStudentRow, Student } from '..
 const STORAGE_KEY = 'student-picker-data-v2';
 
 export const BASE_LIVES = 10;
-export const MAX_LIVES = BASE_LIVES + 1;
+export const BONUS_LIVES = BASE_LIVES + 1;
+const DEFAULT_LIVES = 0;
+
+const NAME_HEADERS = ['name', 'student', 'student name', 'nombre', 'full name'];
+const LIVES_HEADERS = ['lives', 'life', 'vidas', 'vida', 'hearts', 'heart'];
+const FRIDAY_POINTS_HEADERS = [
+  'friday points',
+  'friday_points',
+  'fridaypoints',
+  'friday pts',
+  'friday pt',
+  'points',
+  'point',
+  'score',
+  'grade',
+  'pts',
+  'pt',
+];
+
+const normalizeHeader = (header: string): string =>
+  header.toLowerCase().replace(/^\ufeff/, '').replace(/[_-]+/g, ' ').trim();
+
+const matchesHeader = (header: string, aliases: string[]): boolean =>
+  aliases.includes(normalizeHeader(header));
+
+const isLivesHeader = (header: string): boolean => {
+  const normalized = normalizeHeader(header);
+  return LIVES_HEADERS.includes(normalized)
+    || /\blives?\b/.test(normalized)
+    || normalized.includes('vida')
+    || normalized.includes('heart');
+};
+
+const isFridayHeader = (header: string): boolean => {
+  const normalized = normalizeHeader(header);
+  return FRIDAY_POINTS_HEADERS.includes(normalized)
+    || normalized.includes('friday')
+    || /\bpoints?\b/.test(normalized)
+    || normalized.includes('score')
+    || normalized.includes('grade')
+    || normalized === 'pts'
+    || normalized === 'pt';
+};
+
+const findNameColumn = (headers: string[]): number => {
+  const exact = headers.findIndex(h => matchesHeader(h, NAME_HEADERS));
+  if (exact >= 0) return exact;
+  return headers.findIndex(h => normalizeHeader(h).includes('name'));
+};
+
+const resolveCsvColumns = (headers: string[], nameIndex: number) => {
+  let fridayCol = -1;
+  let livesCol = -1;
+
+  headers.forEach((header, index) => {
+    if (index === nameIndex) return;
+    if (isLivesHeader(header)) livesCol = index;
+    else if (isFridayHeader(header)) fridayCol = index;
+  });
+
+  const unmatched = headers
+    .map((_, index) => index)
+    .filter(index => index !== nameIndex && index !== fridayCol && index !== livesCol);
+
+  if (fridayCol < 0 && unmatched.length > 0) {
+    fridayCol = unmatched.shift()!;
+  }
+  if (livesCol < 0 && unmatched.length > 0) {
+    livesCol = unmatched.shift()!;
+  }
+
+  return { fridayCol, livesCol };
+};
 
 export const createId = (): string =>
   `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 
-export const createStudent = (name: string, lives = BASE_LIVES): Student => ({
+export const createStudent = (
+  name: string,
+  fridayPoints = 0,
+  lives = DEFAULT_LIVES
+): Student => ({
   id: createId(),
   name: name.trim(),
   lives,
+  fridayPoints,
 });
 
-export const applyLivesChange = (lives: number, result: AnswerResult): number => {
+export const applyFridayPointsChange = (
+  fridayPoints: number,
+  lives: number,
+  result: AnswerResult
+): number => {
   switch (result) {
     case 'correct':
-      return Math.min(lives + 1, MAX_LIVES);
+      return fridayPoints >= BASE_LIVES ? BASE_LIVES : fridayPoints + 1;
     case 'wrong':
-      if (lives >= MAX_LIVES) return BASE_LIVES;
-      return lives - 1;
+      if (fridayPoints >= BASE_LIVES && lives > 0) return BASE_LIVES;
+      return fridayPoints - 1;
+    case 'neutral':
+      return fridayPoints;
+  }
+};
+
+export const applyLivesChange = (lives: number, fridayPoints: number, result: AnswerResult): number => {
+  switch (result) {
+    case 'correct':
+      return fridayPoints >= BASE_LIVES ? lives + 1 : lives;
+    case 'wrong':
+      if (fridayPoints >= BASE_LIVES && lives > 0) return lives - 1;
+      return lives;
     case 'neutral':
       return lives;
   }
 };
 
-export const formatLivesFeedback = (
+export const formatAnswerFeedback = (
   name: string,
   result: AnswerResult,
-  before: number,
-  after: number
+  livesBefore: number,
+  livesAfter: number,
+  fridayBefore: number,
+  fridayAfter: number
 ): string => {
-  if (result === 'correct') {
-    if (after === before) {
-      return `${name}: Correct — already at max lives (${after})`;
-    }
-    return `${name}: Correct — +1 life (${before} → ${after})`;
+  const label = result === 'correct' ? 'Correct' : result === 'wrong' ? 'Wrong' : 'Neutral';
+  const changes: string[] = [];
+
+  if (livesAfter !== livesBefore) {
+    changes.push(`lives ${livesBefore} → ${livesAfter}`);
   }
-  if (result === 'wrong') {
-    if (before >= MAX_LIVES && after === BASE_LIVES) {
-      return `${name}: Wrong — back to base (${before} → ${after})`;
-    }
-    return `${name}: Wrong — −1 life (${before} → ${after})`;
+  if (fridayAfter !== fridayBefore) {
+    changes.push(`Friday pts ${fridayBefore} → ${fridayAfter}`);
   }
-  return `${name}: Neutral — no change (${after} lives)`;
+
+  return `${name}: ${label} — ${changes.length > 0 ? changes.join(', ') : 'no change'}`;
 };
 
 export const createGradeGroup = (name: string): GradeGroup => ({
@@ -65,29 +158,21 @@ const parsePoints = (value: string | undefined): number => {
   return Number.isNaN(parsed) ? 0 : parsed;
 };
 
-const LIVES_HEADERS = ['lives', 'life'];
-const FRIDAY_POINTS_HEADERS = ['friday points', 'friday_points', 'fridaypoints', 'friday pts'];
-
-const findLivesColumn = (headers: string[]): number => {
-  const livesIndex = headers.findIndex(h => LIVES_HEADERS.includes(h));
-  if (livesIndex >= 0) return livesIndex;
-  const fridayIndex = headers.findIndex(h => FRIDAY_POINTS_HEADERS.includes(h));
-  if (fridayIndex >= 0) return fridayIndex;
-  return headers.indexOf('points');
-};
-
 /**
- * Parse CSV with required "name" column and optional "lives" / "points" column.
+ * Parse CSV with required name column and flexible mapping for other columns.
+ * Only "name" must match exactly (or a known alias). Any other columns are
+ * mapped to Friday pts / lives by header hint, otherwise by column order.
  */
 export const parseCSV = (text: string): ParsedStudentRow[] => {
   const lines = text.split('\n').filter(line => line.trim());
-  const headers = lines[0].toLowerCase().split(',').map(h => h.trim());
-  const nameIndex = headers.indexOf('name');
-  const livesIndex = findLivesColumn(headers);
+  const headers = lines[0].split(',').map(h => normalizeHeader(h));
+  const nameIndex = findNameColumn(headers);
 
   if (nameIndex === -1) {
     throw new Error('CSV must contain a "name" column');
   }
+
+  const { fridayCol, livesCol } = resolveCsvColumns(headers, nameIndex);
 
   return lines.slice(1)
     .map(line => {
@@ -96,14 +181,16 @@ export const parseCSV = (text: string): ParsedStudentRow[] => {
       if (!name) return null;
       return {
         name,
-        lives: livesIndex >= 0 ? parsePoints(values[livesIndex]) : BASE_LIVES,
+        fridayPoints: fridayCol >= 0 ? parsePoints(values[fridayCol]) : 0,
+        lives: livesCol >= 0 ? parsePoints(values[livesCol]) : DEFAULT_LIVES,
       };
     })
     .filter((row): row is ParsedStudentRow => row !== null);
 };
 
 /**
- * Parse TXT: one name per line, or "Name,lives" / "Name:lives".
+ * Parse TXT: one name per line, or "Name,fridayPoints" / "Name:fridayPoints",
+ * or "Name,fridayPoints,lives".
  */
 export const parseTXT = (text: string): ParsedStudentRow[] => {
   return text
@@ -111,24 +198,40 @@ export const parseTXT = (text: string): ParsedStudentRow[] => {
     .filter(line => line.trim())
     .map(line => {
       const trimmed = line.trim();
-      const commaSplit = trimmed.split(',');
+      const commaSplit = trimmed.split(',').map(s => s.trim());
       const colonSplit = trimmed.split(':');
 
+      if (commaSplit.length >= 3) {
+        return {
+          name: commaSplit[0],
+          fridayPoints: parsePoints(commaSplit[1]),
+          lives: parsePoints(commaSplit[2]),
+        };
+      }
       if (commaSplit.length >= 2) {
-        return { name: commaSplit[0].trim(), lives: parsePoints(commaSplit[1]) };
+        return {
+          name: commaSplit[0],
+          fridayPoints: parsePoints(commaSplit[1]),
+          lives: DEFAULT_LIVES,
+        };
       }
       if (colonSplit.length >= 2) {
-        return { name: colonSplit[0].trim(), lives: parsePoints(colonSplit[1]) };
+        return {
+          name: colonSplit[0].trim(),
+          fridayPoints: parsePoints(colonSplit[1]),
+          lives: DEFAULT_LIVES,
+        };
       }
-      return { name: trimmed, lives: BASE_LIVES };
+      return { name: trimmed, fridayPoints: 0, lives: DEFAULT_LIVES };
     })
     .filter(row => row.name.length > 0);
 };
 
-const normalizeStudent = (student: Student & { points?: number; fridayPoints?: number }): Student => ({
+const normalizeStudent = (student: Student & { points?: number }): Student => ({
   id: student.id,
   name: student.name,
-  lives: student.lives ?? student.points ?? student.fridayPoints ?? BASE_LIVES,
+  lives: student.lives ?? DEFAULT_LIVES,
+  fridayPoints: student.fridayPoints ?? student.points ?? 0,
 });
 
 const normalizeAppData = (data: AppData): AppData => ({
@@ -192,6 +295,12 @@ export const getActiveGrade = (data: AppData): GradeGroup | null =>
 
 export const getStudentById = (grade: GradeGroup, studentId: string): Student | undefined =>
   grade.students.find(s => s.id === studentId);
+
+export const averageFridayPoints = (students: Student[]): number => {
+  if (students.length === 0) return 0;
+  const total = students.reduce((sum, s) => sum + s.fridayPoints, 0);
+  return Math.round((total / students.length) * 10) / 10;
+};
 
 export const averageLives = (students: Student[]): number => {
   if (students.length === 0) return 0;

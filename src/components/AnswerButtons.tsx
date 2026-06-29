@@ -1,19 +1,29 @@
 import React from 'react';
 import { Check, Minus, MinusCircle } from 'lucide-react';
 import { AnswerResult } from '../types';
-import { BASE_LIVES, MAX_LIVES } from '../utils/helpers';
+import { BASE_LIVES } from '../utils/helpers';
 import '../styles/AnswerButtons.css';
 
 interface AnswerButtonsProps {
   onAnswer: (result: AnswerResult) => void;
   disabled: boolean;
+  fridayPointsAtPick: number;
   currentLives: number;
 }
 
-const AnswerButtons: React.FC<AnswerButtonsProps> = ({ onAnswer, disabled, currentLives }) => {
-  const wrongLabel = currentLives >= MAX_LIVES
-    ? `Wrong (back to ${BASE_LIVES})`
-    : 'Wrong (−1 life)';
+const AnswerButtons: React.FC<AnswerButtonsProps> = ({
+  onAnswer,
+  disabled,
+  fridayPointsAtPick,
+  currentLives,
+}) => {
+  const correctLabel = fridayPointsAtPick >= BASE_LIVES
+    ? 'Correct (+1 life)'
+    : 'Correct (+1 pt)';
+
+  const wrongLabel = fridayPointsAtPick >= BASE_LIVES && currentLives > 0
+    ? 'Wrong (lose 1 life)'
+    : 'Wrong (−1 pt)';
 
   return (
     <div className="answer-buttons">
@@ -26,7 +36,7 @@ const AnswerButtons: React.FC<AnswerButtonsProps> = ({ onAnswer, disabled, curre
           disabled={disabled}
         >
           <Check size={18} />
-          {currentLives >= MAX_LIVES ? 'Correct (max lives)' : 'Correct (+1 life)'}
+          {correctLabel}
         </button>
         <button
           type="button"

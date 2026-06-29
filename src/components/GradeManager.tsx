@@ -1,18 +1,72 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { GraduationCap } from 'lucide-react';
 import { GradeGroup } from '../types';
 import '../styles/GradeManager.css';
+
+interface LivesInputProps {
+  value: number;
+  onCommit: (value: number) => void;
+  ariaLabel: string;
+}
+
+const LivesInput: React.FC<LivesInputProps> = ({ value, onCommit, ariaLabel }) => {
+  const [draft, setDraft] = useState(String(value));
+
+  useEffect(() => {
+    setDraft(String(value));
+  }, [value]);
+
+  const commit = () => {
+    const trimmed = draft.trim();
+    if (trimmed === '' || trimmed === '-') {
+      setDraft(String(value));
+      return;
+    }
+    const parsed = Number.parseInt(trimmed, 10);
+    if (Number.isNaN(parsed)) {
+      setDraft(String(value));
+      return;
+    }
+    onCommit(parsed);
+  };
+
+  const handleChange = (next: string) => {
+    if (next === '' || next === '-' || /^-?\d+$/.test(next)) {
+      setDraft(next);
+    }
+  };
+
+  return (
+    <input
+      type="text"
+      inputMode="numeric"
+      autoComplete="off"
+      className="roster-value-input"
+      value={draft}
+      onChange={e => handleChange(e.target.value)}
+      onBlur={commit}
+      onKeyDown={e => {
+        if (e.key === 'Enter') {
+          e.currentTarget.blur();
+        }
+      }}
+      aria-label={ariaLabel}
+    />
+  );
+};
 
 interface GradeManagerProps {
   gradeGroups: GradeGroup[];
   activeGradeId: string | null;
   onSelectGroup: (gradeId: string) => void;
+  onUpdateLives: (studentId: string, lives: number) => void;
 }
 
 const GradeManager: React.FC<GradeManagerProps> = ({
   gradeGroups,
   activeGradeId,
   onSelectGroup,
+  onUpdateLives,
 }) => {
   const activeGrade = gradeGroups.find(g => g.id === activeGradeId) ?? null;
 
@@ -47,17 +101,23 @@ const GradeManager: React.FC<GradeManagerProps> = ({
 
       {activeGrade.students.length > 0 && (
         <div className="roster">
-          <div className="roster-header">
+          <div className="roster-header roster-header-scores">
             <span>Student</span>
+            <span>Friday pts</span>
             <span>Lives</span>
           </div>
           <ul className="roster-list">
             {[...activeGrade.students]
               .sort((a, b) => a.name.localeCompare(b.name))
               .map(student => (
-                <li key={student.id} className="roster-item">
+                <li key={student.id} className="roster-item roster-item-scores">
                   <span className="roster-name">{student.name}</span>
-                  <span className="roster-points">{student.lives}</span>
+                  <span className="roster-points">{student.fridayPoints}</span>
+                  <LivesInput
+                    value={student.lives}
+                    onCommit={value => onUpdateLives(student.id, value)}
+                    ariaLabel={`Edit lives for ${student.name}`}
+                  />
                 </li>
               ))}
           </ul>

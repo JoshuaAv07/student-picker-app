@@ -286,6 +286,57 @@
   color: var(--text);
 }
 
+.roster-header-scores,
+.roster-item-scores {
+  grid-template-columns: 1fr 4.5rem 4.5rem;
+}
+
+.roster-header-scores span:not(:first-child),
+.roster-item-scores .roster-value-input,
+.roster-item-scores .roster-points {
+  justify-self: center;
+}
+
+.roster-value-input {
+  width: 3.5rem;
+  padding: 0.35rem 0.45rem;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--accent);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  border-radius: var(--radius);
+  transition: border-color 0.2s var(--ease);
+}
+
+.roster-value-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-dim);
+}
+
+.lives-input {
+  width: 3.5rem;
+  padding: 0.35rem 0.45rem;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--accent);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  border-radius: var(--radius);
+  transition: border-color 0.2s var(--ease);
+}
+
+.lives-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-dim);
+}
+
 .roster-points {
   font-family: var(--font-display);
   font-weight: 700;

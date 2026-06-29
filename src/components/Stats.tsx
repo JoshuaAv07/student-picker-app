@@ -5,6 +5,7 @@ interface StatsProps {
   totalStudents: number;
   remainingStudents: number;
   selectedCount: number;
+  averageFridayPoints: number;
   averageLives: number;
 }
 
@@ -12,6 +13,7 @@ const Stats: React.FC<StatsProps> = ({
   totalStudents,
   remainingStudents,
   selectedCount,
+  averageFridayPoints,
   averageLives,
 }) => {
   return (
@@ -29,6 +31,11 @@ const Stats: React.FC<StatsProps> = ({
       <div className="stat-card">
         <div className="stat-value">{selectedCount}</div>
         <div className="stat-label">Participated</div>
+      </div>
+
+      <div className="stat-card">
+        <div className="stat-value">{averageFridayPoints}</div>
+        <div className="stat-label">Avg Friday Pts</div>
       </div>
 
       <div className="stat-card">

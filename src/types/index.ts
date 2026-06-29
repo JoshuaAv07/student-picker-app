@@ -2,6 +2,7 @@ export interface Student {
   id: string;
   name: string;
   lives: number;
+  fridayPoints: number;
 }
 
 export interface GradeGroup {
@@ -22,4 +23,5 @@ export interface AppData {
 export interface ParsedStudentRow {
   name: string;
   lives: number;
+  fridayPoints: number;
 }

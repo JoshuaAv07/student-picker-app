@@ -30,7 +30,7 @@ const parsePoints = (value: string | undefined): number => {
   return Number.isNaN(parsed) ? 0 : parsed;
 };
 
-const FRIDAY_POINTS_HEADERS = ['friday points', 'friday_points', 'fridaypoints'];
+const FRIDAY_POINTS_HEADERS = ['friday points', 'friday_points', 'fridaypoints', 'friday pts'];
 
 const findFridayPointsColumn = (headers: string[]): number => {
   const fridayIndex = headers.findIndex(h => FRIDAY_POINTS_HEADERS.includes(h));

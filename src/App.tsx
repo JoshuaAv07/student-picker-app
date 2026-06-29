@@ -202,7 +202,9 @@ const App: React.FC = () => {
       updateGradeInData(prev, activeGrade.id, grade => ({
         ...grade,
         students: grade.students.map(s =>
-          s.id === selectedStudentId ? { ...s, points: assigned } : s
+          s.id === selectedStudentId
+            ? { ...s, points: assigned, fridayPoints: assigned }
+            : s
         ),
       }))
     );
@@ -230,7 +232,7 @@ const App: React.FC = () => {
         ...grade,
         students: grade.students.map(s =>
           s.id === selectedStudentId
-            ? { ...s, points: s.points + delta }
+            ? { ...s, points: newPoints, fridayPoints: newPoints }
             : s
         ),
         remainingStudentIds: newRemaining,
@@ -247,10 +249,6 @@ const App: React.FC = () => {
     setAppData(prev =>
       updateGradeInData(prev, activeGrade.id, grade => ({
         ...grade,
-        students: grade.students.map(s => ({
-          ...s,
-          points: s.fridayPoints,
-        })),
         remainingStudentIds: grade.students.map(s => s.id),
       }))
     );

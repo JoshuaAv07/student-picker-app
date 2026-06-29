@@ -49,7 +49,7 @@ const GradeManager: React.FC<GradeManagerProps> = ({
         <div className="roster">
           <div className="roster-header">
             <span>Student</span>
-            <span>Friday pts</span>
+            <span>Lives</span>
           </div>
           <ul className="roster-list">
             {[...activeGrade.students]
@@ -57,7 +57,7 @@ const GradeManager: React.FC<GradeManagerProps> = ({
               .map(student => (
                 <li key={student.id} className="roster-item">
                   <span className="roster-name">{student.name}</span>
-                  <span className="roster-points">{student.points}</span>
+                  <span className="roster-points">{student.lives}</span>
                 </li>
               ))}
           </ul>

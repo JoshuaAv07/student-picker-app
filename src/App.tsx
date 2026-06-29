@@ -9,9 +9,11 @@ import ActionButtons from './components/ActionButtons';
 import Instructions from './components/Instructions';
 import { AnswerResult, AppData, GradeGroup } from './types';
 import {
-  averagePoints,
+  applyLivesChange,
+  averageLives,
   createGradeGroup,
   createStudent,
+  formatLivesFeedback,
   getActiveGrade,
   getStudentById,
   groupNameFromFile,
@@ -23,18 +25,6 @@ import {
 import './styles/global.css';
 import './styles/animations.css';
 import './styles/App.css';
-
-const POINT_DELTA: Record<AnswerResult, number> = {
-  correct: 1,
-  wrong: -1,
-  neutral: 0,
-};
-
-const FEEDBACK_LABEL: Record<AnswerResult, string> = {
-  correct: 'Correct — +1 point',
-  wrong: 'Wrong — −1 point',
-  neutral: 'Neutral — no change',
-};
 
 const updateGradeInData = (
   data: AppData,
@@ -51,7 +41,7 @@ const App: React.FC = () => {
   const [appData, setAppData] = useState<AppData>(() => loadAppData());
   const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
   const [gradeInput, setGradeInput] = useState('');
-  const [pointsAtPick, setPointsAtPick] = useState<number | null>(null);
+  const [livesAtPick, setLivesAtPick] = useState<number | null>(null);
   const [participationPhase, setParticipationPhase] = useState<ParticipationPhase | null>(null);
   const [isSpinning, setIsSpinning] = useState(false);
   const [lastFeedback, setLastFeedback] = useState<string | null>(null);
@@ -65,7 +55,7 @@ const App: React.FC = () => {
   const clearPickState = () => {
     setSelectedStudentId(null);
     setGradeInput('');
-    setPointsAtPick(null);
+    setLivesAtPick(null);
     setParticipationPhase(null);
     setIsSpinning(false);
     setLastFeedback(null);
@@ -96,7 +86,7 @@ const App: React.FC = () => {
       }
 
       const name = groupName.trim() || groupNameFromFile(file.name);
-      const students = rows.map(row => createStudent(row.name, row.points));
+      const students = rows.map(row => createStudent(row.name, row.lives));
       const studentIds = students.map(s => s.id);
 
       setAppData(prev => {
@@ -175,8 +165,8 @@ const App: React.FC = () => {
 
       const chosen = poolStudents[Math.floor(Math.random() * poolStudents.length)];
       setSelectedStudentId(chosen.id);
-      setGradeInput(String(chosen.points));
-      setPointsAtPick(null);
+      setGradeInput(String(chosen.lives));
+      setLivesAtPick(null);
       setParticipationPhase('asking');
       setIsSpinning(false);
     }, 2000);
@@ -197,14 +187,12 @@ const App: React.FC = () => {
       return;
     }
 
-    setPointsAtPick(assigned);
+    setLivesAtPick(assigned);
     setAppData(prev =>
       updateGradeInData(prev, activeGrade.id, grade => ({
         ...grade,
         students: grade.students.map(s =>
-          s.id === selectedStudentId
-            ? { ...s, points: assigned, fridayPoints: assigned }
-            : s
+          s.id === selectedStudentId ? { ...s, lives: assigned } : s
         ),
       }))
     );
@@ -212,17 +200,17 @@ const App: React.FC = () => {
   };
 
   const handleAnswer = useCallback((result: AnswerResult) => {
-    if (!activeGrade || !selectedStudentId || participationPhase !== 'grading' || pointsAtPick === null) {
+    if (!activeGrade || !selectedStudentId || participationPhase !== 'grading' || livesAtPick === null) {
       return;
     }
 
-    const delta = POINT_DELTA[result];
     const student = getStudentById(activeGrade, selectedStudentId);
     if (!student) return;
 
-    const newPoints = student.points + delta;
+    const before = livesAtPick;
+    const newLives = applyLivesChange(before, result);
     const newRemaining = activeGrade.remainingStudentIds.filter(id => id !== selectedStudentId);
-    let feedback = `${student.name}: ${FEEDBACK_LABEL[result]} (${pointsAtPick} → ${newPoints} pts)`;
+    let feedback = formatLivesFeedback(student.name, result, before, newLives);
     if (newRemaining.length === 0) {
       feedback += ' — All students have participated this round!';
     }
@@ -231,9 +219,7 @@ const App: React.FC = () => {
       updateGradeInData(prev, activeGrade.id, grade => ({
         ...grade,
         students: grade.students.map(s =>
-          s.id === selectedStudentId
-            ? { ...s, points: newPoints, fridayPoints: newPoints }
-            : s
+          s.id === selectedStudentId ? { ...s, lives: newLives } : s
         ),
         remainingStudentIds: newRemaining,
       }))
@@ -241,7 +227,7 @@ const App: React.FC = () => {
 
     setLastFeedback(feedback);
     setParticipationPhase('done');
-  }, [activeGrade, selectedStudentId, participationPhase, pointsAtPick]);
+  }, [activeGrade, selectedStudentId, participationPhase, livesAtPick]);
 
   const resetList = () => {
     if (!activeGrade || activeGrade.students.length === 0) return;
@@ -291,7 +277,7 @@ const App: React.FC = () => {
               totalStudents={totalCount}
               remainingStudents={remainingCount}
               selectedCount={participatedCount}
-              averagePoints={averagePoints(students)}
+              averageLives={averageLives(students)}
             />
             <ProgressBar progress={progress} />
           </>
@@ -301,8 +287,8 @@ const App: React.FC = () => {
           <WinnerDisplay
             studentName={selectedStudent.name}
             gradeInput={gradeInput}
-            pointsAtPick={pointsAtPick}
-            currentPoints={selectedStudent.points}
+            livesAtPick={livesAtPick}
+            currentLives={selectedStudent.lives}
             isSpinning={isSpinning}
             phase={participationPhase}
             onGradeInputChange={setGradeInput}

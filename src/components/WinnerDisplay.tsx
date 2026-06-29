@@ -8,8 +8,8 @@ export type ParticipationPhase = 'asking' | 'grading' | 'done';
 interface WinnerDisplayProps {
   studentName: string;
   gradeInput: string;
-  pointsAtPick: number | null;
-  currentPoints: number;
+  livesAtPick: number | null;
+  currentLives: number;
   isSpinning: boolean;
   phase: ParticipationPhase;
   onGradeInputChange: (value: string) => void;
@@ -20,8 +20,8 @@ interface WinnerDisplayProps {
 const WinnerDisplay: React.FC<WinnerDisplayProps> = ({
   studentName,
   gradeInput,
-  pointsAtPick,
-  currentPoints,
+  livesAtPick,
+  currentLives,
   isSpinning,
   phase,
   onGradeInputChange,
@@ -39,7 +39,7 @@ const WinnerDisplay: React.FC<WinnerDisplayProps> = ({
     onGradeInputChange(String(Number.isNaN(current) ? delta : current + delta));
   };
 
-  const gradeChanged = phase === 'done' && pointsAtPick !== null && currentPoints !== pointsAtPick;
+  const livesChanged = phase === 'done' && livesAtPick !== null && currentLives !== livesAtPick;
 
   return (
     <div className={`winner-display bounce-in ${!isSpinning ? 'winner-card' : ''}`}>
@@ -51,14 +51,14 @@ const WinnerDisplay: React.FC<WinnerDisplayProps> = ({
           {phase === 'asking' && (
             <div className="winner-grade-input-wrap">
               <label className="winner-grade-label" htmlFor="assigned-grade">
-                Assigned grade
+                Lives
               </label>
               <div className="winner-grade-controls">
                 <button
                   type="button"
                   className="grade-step-btn"
                   onClick={() => adjustGrade(-1)}
-                  aria-label="Decrease grade by 1"
+                  aria-label="Decrease lives by 1"
                 >
                   −
                 </button>
@@ -69,14 +69,14 @@ const WinnerDisplay: React.FC<WinnerDisplayProps> = ({
                   autoComplete="off"
                   value={gradeInput}
                   onChange={e => handleGradeChange(e.target.value)}
-                  placeholder="0"
+                  placeholder="10"
                   className="winner-grade-input"
                 />
                 <button
                   type="button"
                   className="grade-step-btn"
                   onClick={() => adjustGrade(1)}
-                  aria-label="Increase grade by 1"
+                  aria-label="Increase lives by 1"
                 >
                   +
                 </button>
@@ -84,9 +84,9 @@ const WinnerDisplay: React.FC<WinnerDisplayProps> = ({
             </div>
           )}
 
-          {(phase === 'grading' || phase === 'done') && pointsAtPick !== null && (
+          {(phase === 'grading' || phase === 'done') && livesAtPick !== null && (
             <div className="winner-points">
-              Assigned grade: <strong>{pointsAtPick}</strong> {pointsAtPick === 1 ? 'point' : 'points'}
+              Lives at pick: <strong>{livesAtPick}</strong>
             </div>
           )}
 
@@ -100,18 +100,18 @@ const WinnerDisplay: React.FC<WinnerDisplayProps> = ({
           )}
 
           {phase === 'grading' && (
-            <AnswerButtons onAnswer={onAnswer} disabled={false} />
+            <AnswerButtons onAnswer={onAnswer} disabled={false} currentLives={livesAtPick ?? currentLives} />
           )}
 
-          {gradeChanged && (
+          {livesChanged && (
             <div className="winner-points-updated">
-              Updated grade: <strong>{currentPoints}</strong> {currentPoints === 1 ? 'point' : 'points'}
+              Updated lives: <strong>{currentLives}</strong>
             </div>
           )}
 
           {phase === 'done' && (
             <p className="winner-scored-hint">
-              Grade recorded. Pick again for the next student.
+              Lives recorded. Pick again for the next student.
             </p>
           )}
         </>

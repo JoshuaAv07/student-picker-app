@@ -5,14 +5,14 @@ interface StatsProps {
   totalStudents: number;
   remainingStudents: number;
   selectedCount: number;
-  averagePoints: number;
+  averageLives: number;
 }
 
 const Stats: React.FC<StatsProps> = ({
   totalStudents,
   remainingStudents,
   selectedCount,
-  averagePoints,
+  averageLives,
 }) => {
   return (
     <div className="stats-container slide-up" style={{ animationDelay: '0.2s' }}>
@@ -32,8 +32,8 @@ const Stats: React.FC<StatsProps> = ({
       </div>
 
       <div className="stat-card">
-        <div className="stat-value">{averagePoints}</div>
-        <div className="stat-label">Avg Points</div>
+        <div className="stat-value">{averageLives}</div>
+        <div className="stat-label">Avg Lives</div>
       </div>
     </div>
   );

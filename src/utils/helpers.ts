@@ -89,7 +89,25 @@ export const createStudent = (
   name: name.trim(),
   lives,
   fridayPoints,
+  fridayPointsBaseline: fridayPoints,
 });
+
+export const buildUploadedFridayPoints = (rows: ParsedStudentRow[]): Record<string, number> =>
+  Object.fromEntries(rows.map(row => [row.name.toLowerCase(), row.fridayPoints]));
+
+export const getStudentFridayBaseline = (grade: GradeGroup, student: Student): number => {
+  if (!grade.fridayPointsSnapshottedAtUpload) return 0;
+  return grade.uploadedFridayPoints?.[student.name.toLowerCase()] ?? 0;
+};
+
+export const shuffleIds = (ids: string[]): string[] => {
+  const next = [...ids];
+  for (let i = next.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [next[i], next[j]] = [next[j], next[i]];
+  }
+  return next;
+};
 
 export const applyFridayPointsChange = (
   fridayPoints: number,
@@ -145,6 +163,7 @@ export const createGradeGroup = (name: string): GradeGroup => ({
   name: name.trim(),
   students: [],
   remainingStudentIds: [],
+  requireFridayEntry: true,
 });
 
 export const groupNameFromFile = (filename: string): string => {
@@ -227,19 +246,28 @@ export const parseTXT = (text: string): ParsedStudentRow[] => {
     .filter(row => row.name.length > 0);
 };
 
-const normalizeStudent = (student: Student & { points?: number }): Student => ({
-  id: student.id,
-  name: student.name,
-  lives: student.lives ?? DEFAULT_LIVES,
-  fridayPoints: student.fridayPoints ?? student.points ?? 0,
+const normalizeStudent = (student: Student & { points?: number }): Student => {
+  const fridayPoints = student.fridayPoints ?? student.points ?? 0;
+  return {
+    id: student.id,
+    name: student.name,
+    lives: student.lives ?? DEFAULT_LIVES,
+    fridayPoints,
+    fridayPointsBaseline: typeof student.fridayPointsBaseline === 'number'
+      ? student.fridayPointsBaseline
+      : 0,
+  };
+};
+
+const normalizeGradeGroup = (grade: GradeGroup): GradeGroup => ({
+  ...grade,
+  students: grade.students.map(normalizeStudent),
+  requireFridayEntry: grade.requireFridayEntry !== false,
 });
 
 const normalizeAppData = (data: AppData): AppData => ({
   ...data,
-  gradeGroups: data.gradeGroups.map(grade => ({
-    ...grade,
-    students: grade.students.map(normalizeStudent),
-  })),
+  gradeGroups: data.gradeGroups.map(normalizeGradeGroup),
 });
 
 export const loadAppData = (): AppData => {
@@ -295,15 +323,3 @@ export const getActiveGrade = (data: AppData): GradeGroup | null =>
 
 export const getStudentById = (grade: GradeGroup, studentId: string): Student | undefined =>
   grade.students.find(s => s.id === studentId);
-
-export const averageFridayPoints = (students: Student[]): number => {
-  if (students.length === 0) return 0;
-  const total = students.reduce((sum, s) => sum + s.fridayPoints, 0);
-  return Math.round((total / students.length) * 10) / 10;
-};
-
-export const averageLives = (students: Student[]): number => {
-  if (students.length === 0) return 0;
-  const total = students.reduce((sum, s) => sum + s.lives, 0);
-  return Math.round((total / students.length) * 10) / 10;
-};

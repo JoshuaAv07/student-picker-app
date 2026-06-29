@@ -7,12 +7,10 @@ import ProgressBar from './components/ProgressBar';
 import WinnerDisplay, { ParticipationPhase } from './components/WinnerDisplay';
 import ActionButtons from './components/ActionButtons';
 import Instructions from './components/Instructions';
-import { AnswerResult, AppData, GradeGroup } from './types';
+import { AnswerResult, AppData, GradeGroup, ParsedStudentRow } from './types';
 import {
   applyFridayPointsChange,
   applyLivesChange,
-  averageFridayPoints,
-  averageLives,
   createGradeGroup,
   createStudent,
   formatAnswerFeedback,
@@ -22,6 +20,8 @@ import {
   loadAppData,
   parseCSV,
   parseTXT,
+  buildUploadedFridayPoints,
+  shuffleIds,
   saveAppData,
 } from './utils/helpers';
 import './styles/global.css';
@@ -75,7 +75,7 @@ const App: React.FC = () => {
 
     try {
       const text = await file.text();
-      let rows;
+      let rows: ParsedStudentRow[];
 
       if (file.name.endsWith('.csv')) {
         rows = parseCSV(text);
@@ -90,13 +90,28 @@ const App: React.FC = () => {
       }
 
       const name = groupName.trim() || groupNameFromFile(file.name);
-      const students = rows.map(row => createStudent(row.name, row.fridayPoints, row.lives));
-      const studentIds = students.map(s => s.id);
+      const uploadedFridayPoints = buildUploadedFridayPoints(rows);
 
       setAppData(prev => {
         const existing = prev.gradeGroups.find(
           g => g.name.toLowerCase() === name.toLowerCase()
         );
+
+        const students = rows.map(row => {
+          const existingStudent = existing?.students.find(
+            s => s.name.toLowerCase() === row.name.toLowerCase()
+          );
+          if (existingStudent) {
+            return {
+              ...existingStudent,
+              name: row.name.trim(),
+              fridayPoints: row.fridayPoints,
+              fridayPointsBaseline: row.fridayPoints,
+            };
+          }
+          return createStudent(row.name, row.fridayPoints, row.lives);
+        });
+        const studentIds = students.map(s => s.id);
 
         if (existing) {
           return {
@@ -110,6 +125,9 @@ const App: React.FC = () => {
                     students,
                     remainingStudentIds: studentIds,
                     sourceFileName: file.name,
+                    uploadedFridayPoints,
+                    fridayPointsSnapshottedAtUpload: true,
+                    requireFridayEntry: true,
                   }
                 : g
             ),
@@ -120,6 +138,9 @@ const App: React.FC = () => {
         grade.students = students;
         grade.remainingStudentIds = studentIds;
         grade.sourceFileName = file.name;
+        grade.uploadedFridayPoints = uploadedFridayPoints;
+        grade.fridayPointsSnapshottedAtUpload = true;
+        grade.requireFridayEntry = true;
 
         return {
           gradeGroups: [...prev.gradeGroups, grade],
@@ -137,18 +158,11 @@ const App: React.FC = () => {
       return;
     }
 
-    let poolIds = activeGrade.remainingStudentIds;
-
-    if (poolIds.length === 0) {
-      poolIds = activeGrade.students.map(s => s.id);
-      setAppData(prev =>
-        updateGradeInData(prev, activeGrade.id, grade => ({
-          ...grade,
-          remainingStudentIds: poolIds,
-        }))
-      );
+    if (activeGrade.remainingStudentIds.length === 0) {
+      return;
     }
 
+    const poolIds = activeGrade.remainingStudentIds;
     const poolStudents = poolIds
       .map(id => getStudentById(activeGrade, id))
       .filter((s): s is NonNullable<typeof s> => s !== undefined);
@@ -169,9 +183,19 @@ const App: React.FC = () => {
 
       const chosen = poolStudents[Math.floor(Math.random() * poolStudents.length)];
       setSelectedStudentId(chosen.id);
-      setGradeInput(String(chosen.fridayPoints));
-      setFridayPointsAtPick(null);
-      setParticipationPhase('asking');
+
+      const needsFridayEntry = activeGrade.requireFridayEntry !== false;
+      if (needsFridayEntry) {
+        setGradeInput(String(chosen.fridayPoints));
+        setFridayPointsAtPick(null);
+        setLivesAtPick(null);
+        setParticipationPhase('asking');
+      } else {
+        setGradeInput(String(chosen.fridayPoints));
+        setFridayPointsAtPick(chosen.fridayPoints);
+        setLivesAtPick(chosen.lives);
+        setParticipationPhase('grading');
+      }
       setIsSpinning(false);
     }, 1000);
   };
@@ -248,16 +272,33 @@ const App: React.FC = () => {
     setParticipationPhase('done');
   }, [activeGrade, selectedStudentId, participationPhase, fridayPointsAtPick]);
 
-  const resetList = () => {
+  const resetRound = () => {
     if (!activeGrade || activeGrade.students.length === 0) return;
 
     setAppData(prev =>
       updateGradeInData(prev, activeGrade.id, grade => ({
         ...grade,
-        remainingStudentIds: grade.students.map(s => s.id),
+        remainingStudentIds: shuffleIds(grade.students.map(s => s.id)),
+        requireFridayEntry: false,
       }))
     );
     clearPickState();
+    setLastFeedback('New round started — Friday pts and lives unchanged.');
+  };
+
+  const resetFridayPoints = () => {
+    if (!activeGrade || activeGrade.students.length === 0) return;
+
+    setAppData(prev =>
+      updateGradeInData(prev, activeGrade.id, grade => ({
+        ...grade,
+        students: grade.students.map(s => ({ ...s, fridayPoints: 0 })),
+        remainingStudentIds: shuffleIds(grade.students.map(s => s.id)),
+        requireFridayEntry: true,
+      }))
+    );
+    clearPickState();
+    setLastFeedback('Friday points reset to 0. Lives unchanged.');
   };
 
   const handleUpdateLives = (studentId: string, lives: number) => {
@@ -282,6 +323,7 @@ const App: React.FC = () => {
   const totalCount = students.length;
   const participatedCount = totalCount - remainingCount;
   const progress = totalCount > 0 ? (participatedCount / totalCount) * 100 : 0;
+  const roundComplete = totalCount > 0 && remainingCount === 0;
   const hasGroups = appData.gradeGroups.length > 0;
   const participationInProgress = participationPhase === 'asking' || participationPhase === 'grading';
 
@@ -310,8 +352,6 @@ const App: React.FC = () => {
               totalStudents={totalCount}
               remainingStudents={remainingCount}
               selectedCount={participatedCount}
-              averageFridayPoints={averageFridayPoints(students)}
-              averageLives={averageLives(students)}
             />
             <ProgressBar progress={progress} />
           </>
@@ -339,9 +379,11 @@ const App: React.FC = () => {
 
         <ActionButtons
           onPickStudent={pickStudent}
-          onReset={resetList}
+          onResetRound={resetRound}
+          onResetFridayPoints={resetFridayPoints}
           isSpinning={isSpinning}
           hasStudents={totalCount > 0}
+          roundComplete={roundComplete}
           disabled={participationInProgress}
         />
 

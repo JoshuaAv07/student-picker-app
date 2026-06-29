@@ -117,12 +117,15 @@ const WinnerDisplay: React.FC<WinnerDisplayProps> = ({
           )}
 
           {phase === 'grading' && fridayPointsAtPick !== null && (
-            <AnswerButtons
-              onAnswer={onAnswer}
-              disabled={false}
-              fridayPointsAtPick={fridayPointsAtPick}
-              currentLives={currentLives}
-            />
+            <>
+              <p className="winner-question-prompt">Ask your question, then grade their answer.</p>
+              <AnswerButtons
+                onAnswer={onAnswer}
+                disabled={false}
+                fridayPointsAtPick={fridayPointsAtPick}
+                currentLives={currentLives}
+              />
+            </>
           )}
 
           {scoresChanged && (

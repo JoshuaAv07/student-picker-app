@@ -5,10 +5,11 @@ const STORAGE_KEY = 'student-picker-data-v2';
 export const createId = (): string =>
   `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 
-export const createStudent = (name: string, points = 0): Student => ({
+export const createStudent = (name: string, fridayPoints = 0): Student => ({
   id: createId(),
   name: name.trim(),
-  points,
+  fridayPoints,
+  points: fridayPoints,
 });
 
 export const createGradeGroup = (name: string): GradeGroup => ({
@@ -29,14 +30,22 @@ const parsePoints = (value: string | undefined): number => {
   return Number.isNaN(parsed) ? 0 : parsed;
 };
 
+const FRIDAY_POINTS_HEADERS = ['friday points', 'friday_points', 'fridaypoints'];
+
+const findFridayPointsColumn = (headers: string[]): number => {
+  const fridayIndex = headers.findIndex(h => FRIDAY_POINTS_HEADERS.includes(h));
+  if (fridayIndex >= 0) return fridayIndex;
+  return headers.indexOf('points');
+};
+
 /**
- * Parse CSV with required "name" column and optional "points" column.
+ * Parse CSV with required "name" column and optional "friday points" / "points" column.
  */
 export const parseCSV = (text: string): ParsedStudentRow[] => {
   const lines = text.split('\n').filter(line => line.trim());
   const headers = lines[0].toLowerCase().split(',').map(h => h.trim());
   const nameIndex = headers.indexOf('name');
-  const pointsIndex = headers.indexOf('points');
+  const pointsIndex = findFridayPointsColumn(headers);
 
   if (nameIndex === -1) {
     throw new Error('CSV must contain a "name" column');
@@ -78,11 +87,25 @@ export const parseTXT = (text: string): ParsedStudentRow[] => {
     .filter(row => row.name.length > 0);
 };
 
+const normalizeStudent = (student: Student): Student => ({
+  ...student,
+  fridayPoints: student.fridayPoints ?? student.points ?? 0,
+  points: student.points ?? student.fridayPoints ?? 0,
+});
+
+const normalizeAppData = (data: AppData): AppData => ({
+  ...data,
+  gradeGroups: data.gradeGroups.map(grade => ({
+    ...grade,
+    students: grade.students.map(normalizeStudent),
+  })),
+});
+
 export const loadAppData = (): AppData => {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
-      return JSON.parse(saved) as AppData;
+      return normalizeAppData(JSON.parse(saved) as AppData);
     }
   } catch {
     /* fall through to migration */

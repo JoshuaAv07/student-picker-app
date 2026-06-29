@@ -1,6 +1,9 @@
 export interface Student {
   id: string;
   name: string;
+  /** Baseline from import — shown in roster, unchanged by participation */
+  fridayPoints: number;
+  /** Current session grade — updated during picks and reset to fridayPoints on round reset */
   points: number;
 }
 

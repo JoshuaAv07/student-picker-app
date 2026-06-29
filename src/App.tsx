@@ -50,6 +50,7 @@ const updateGradeInData = (
 const App: React.FC = () => {
   const [appData, setAppData] = useState<AppData>(() => loadAppData());
   const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
+  const [gradeInput, setGradeInput] = useState('');
   const [pointsAtPick, setPointsAtPick] = useState<number | null>(null);
   const [participationPhase, setParticipationPhase] = useState<ParticipationPhase | null>(null);
   const [isSpinning, setIsSpinning] = useState(false);
@@ -63,6 +64,7 @@ const App: React.FC = () => {
 
   const clearPickState = () => {
     setSelectedStudentId(null);
+    setGradeInput('');
     setPointsAtPick(null);
     setParticipationPhase(null);
     setIsSpinning(false);
@@ -173,13 +175,37 @@ const App: React.FC = () => {
 
       const chosen = poolStudents[Math.floor(Math.random() * poolStudents.length)];
       setSelectedStudentId(chosen.id);
-      setPointsAtPick(chosen.points);
+      setGradeInput(String(chosen.points));
+      setPointsAtPick(null);
       setParticipationPhase('asking');
       setIsSpinning(false);
     }, 2000);
   };
 
   const handleStartGrading = () => {
+    if (!activeGrade || !selectedStudentId) return;
+
+    const trimmed = gradeInput.trim();
+    if (trimmed === '') {
+      alert('Enter a grade before continuing.');
+      return;
+    }
+
+    const assigned = Number.parseInt(trimmed, 10);
+    if (Number.isNaN(assigned)) {
+      alert('Enter a valid whole number for the grade.');
+      return;
+    }
+
+    setPointsAtPick(assigned);
+    setAppData(prev =>
+      updateGradeInData(prev, activeGrade.id, grade => ({
+        ...grade,
+        students: grade.students.map(s =>
+          s.id === selectedStudentId ? { ...s, points: assigned } : s
+        ),
+      }))
+    );
     setParticipationPhase('grading');
   };
 
@@ -221,6 +247,10 @@ const App: React.FC = () => {
     setAppData(prev =>
       updateGradeInData(prev, activeGrade.id, grade => ({
         ...grade,
+        students: grade.students.map(s => ({
+          ...s,
+          points: s.fridayPoints,
+        })),
         remainingStudentIds: grade.students.map(s => s.id),
       }))
     );
@@ -269,13 +299,15 @@ const App: React.FC = () => {
           </>
         )}
 
-        {selectedStudent && pointsAtPick !== null && participationPhase && (
+        {selectedStudent && participationPhase && (
           <WinnerDisplay
             studentName={selectedStudent.name}
+            gradeInput={gradeInput}
             pointsAtPick={pointsAtPick}
             currentPoints={selectedStudent.points}
             isSpinning={isSpinning}
             phase={participationPhase}
+            onGradeInputChange={setGradeInput}
             onStartGrading={handleStartGrading}
             onAnswer={handleAnswer}
           />

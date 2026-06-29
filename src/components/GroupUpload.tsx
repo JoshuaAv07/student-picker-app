@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { Upload, Users } from 'lucide-react';
 import { GradeGroup } from '../types';
-import '../styles/FileUpload.css';
+import '../styles/GroupUpload.css';
 
 interface GroupUploadProps {
   gradeGroups: GradeGroup[];
@@ -103,10 +103,6 @@ const GroupUpload: React.FC<GroupUploadProps> = ({
     }
   };
 
-  const openFilePicker = () => {
-    fileInputRef.current?.click();
-  };
-
   const selectedGroup = gradeGroups.find(g => g.id === selection);
 
   const uploadLabel = isNewGroup
@@ -116,22 +112,22 @@ const GroupUpload: React.FC<GroupUploadProps> = ({
       : 'Choose CSV or TXT File';
 
   return (
-    <div className="file-upload-container slide-up" style={{ animationDelay: '0.1s' }}>
-      <div className="file-upload-header">
-        <div className="upload-icon-wrapper">
-          <Users className="upload-icon" size={28} />
+    <div className="group-upload slide-up" style={{ animationDelay: '0.1s' }}>
+      <div className="group-upload-header">
+        <div className="group-upload-icon-wrapper">
+          <Users className="group-upload-icon" size={28} />
         </div>
-        <h2 className="file-upload-title">Upload Group List</h2>
+        <h2 className="group-upload-title">Upload Group List</h2>
       </div>
 
       {hasSavedGroups ? (
         <>
-          <label className="field-label" htmlFor="group-select">Saved groups</label>
+          <label className="group-upload-field-label" htmlFor="group-select">Saved groups</label>
           <select
             id="group-select"
             value={selection}
             onChange={e => handleSelectionChange(e.target.value)}
-            className="group-select"
+            className="group-upload-select"
           >
             {gradeGroups.map(grade => (
               <option key={grade.id} value={grade.id}>
@@ -143,37 +139,37 @@ const GroupUpload: React.FC<GroupUploadProps> = ({
 
           {isNewGroup ? (
             <>
-              <label className="field-label" htmlFor="new-group-name">New group name</label>
+              <label className="group-upload-field-label" htmlFor="new-group-name">New group name</label>
               <input
                 id="new-group-name"
                 type="text"
                 value={groupName}
                 onChange={e => setGroupName(e.target.value)}
                 placeholder="e.g. Web Design, Big Data"
-                className="group-name-input"
+                className="group-upload-input"
               />
             </>
           ) : selectedGroup?.sourceFileName && (
-            <p className="saved-group-file">
+            <p className="group-upload-saved-file">
               Saved from: {selectedGroup.sourceFileName}
             </p>
           )}
         </>
       ) : (
         <>
-          <label className="field-label" htmlFor="group-name">Group name</label>
+          <label className="group-upload-field-label" htmlFor="group-name">Group name</label>
           <input
             id="group-name"
             type="text"
             value={groupName}
             onChange={e => setGroupName(e.target.value)}
             placeholder="e.g. Web Design, Big Data"
-            className="group-name-input"
+            className="group-upload-input"
           />
         </>
       )}
 
-      <p className="upload-hint">
+      <p className="group-upload-hint">
         Groups are saved automatically. Upload each class once, then switch between them above.
       </p>
 
@@ -182,20 +178,16 @@ const GroupUpload: React.FC<GroupUploadProps> = ({
         type="file"
         accept=".csv,.txt"
         onChange={handleFileChange}
-        className="file-input"
+        className="group-upload-file-input"
         id="group-file-upload"
       />
 
-      <button
-        type="button"
-        className="file-upload-label"
-        onClick={openFilePicker}
-      >
-        <div className="file-upload-button-content">
+      <label htmlFor="group-file-upload" className="group-upload-button">
+        <div className="group-upload-button-content">
           <Upload size={24} />
           {uploadLabel}
         </div>
-      </button>
+      </label>
     </div>
   );
 };

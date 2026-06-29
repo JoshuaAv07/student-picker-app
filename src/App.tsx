@@ -173,7 +173,7 @@ const App: React.FC = () => {
       setFridayPointsAtPick(null);
       setParticipationPhase('asking');
       setIsSpinning(false);
-    }, 2000);
+    }, 1000);
   };
 
   const handleStartGrading = () => {

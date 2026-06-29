@@ -267,6 +267,7 @@ const normalizeGradeGroup = (grade: GradeGroup): GradeGroup => ({
 
 const normalizeAppData = (data: AppData): AppData => ({
   ...data,
+  pickMode: data.pickMode === 'hard' ? 'hard' : 'easy',
   gradeGroups: data.gradeGroups.map(normalizeGradeGroup),
 });
 

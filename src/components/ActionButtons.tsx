@@ -9,6 +9,7 @@ interface ActionButtonsProps {
   isSpinning: boolean;
   hasStudents: boolean;
   roundComplete?: boolean;
+  showResetRound?: boolean;
   disabled?: boolean;
 }
 
@@ -19,6 +20,7 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
   isSpinning,
   hasStudents,
   roundComplete = false,
+  showResetRound = true,
   disabled = false,
 }) => {
   const pickDisabled = disabled || isSpinning || !hasStudents || roundComplete;
@@ -38,22 +40,24 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
         type="button"
         onClick={onPickStudent}
         disabled={pickDisabled}
-        className="pick-button"
+        className={showResetRound ? 'pick-button' : 'pick-button pick-button-full'}
       >
         {pickLabel}
       </button>
 
-      <button
-        type="button"
-        onClick={onResetRound}
-        disabled={secondaryDisabled}
-        className="reset-button"
-      >
-        <div className="reset-button-content">
-          <RotateCw size={24} />
-          Reset Round
-        </div>
-      </button>
+      {showResetRound && (
+        <button
+          type="button"
+          onClick={onResetRound}
+          disabled={secondaryDisabled}
+          className="reset-button"
+        >
+          <div className="reset-button-content">
+            <RotateCw size={24} />
+            Reset Round
+          </div>
+        </button>
+      )}
 
       <button
         type="button"

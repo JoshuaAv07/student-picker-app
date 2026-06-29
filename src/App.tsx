@@ -6,8 +6,9 @@ import Stats from './components/Stats';
 import ProgressBar from './components/ProgressBar';
 import WinnerDisplay, { ParticipationPhase } from './components/WinnerDisplay';
 import ActionButtons from './components/ActionButtons';
+import PickModeToggle from './components/PickModeToggle';
 import Instructions from './components/Instructions';
-import { AnswerResult, AppData, GradeGroup, ParsedStudentRow } from './types';
+import { AnswerResult, AppData, GradeGroup, ParsedStudentRow, PickMode } from './types';
 import {
   applyFridayPointsChange,
   applyLivesChange,
@@ -158,14 +159,17 @@ const App: React.FC = () => {
       return;
     }
 
-    if (activeGrade.remainingStudentIds.length === 0) {
+    const isEasyMode = appData.pickMode !== 'hard';
+
+    if (isEasyMode && activeGrade.remainingStudentIds.length === 0) {
       return;
     }
 
-    const poolIds = activeGrade.remainingStudentIds;
-    const poolStudents = poolIds
-      .map(id => getStudentById(activeGrade, id))
-      .filter((s): s is NonNullable<typeof s> => s !== undefined);
+    const poolStudents = isEasyMode
+      ? activeGrade.remainingStudentIds
+          .map(id => getStudentById(activeGrade, id))
+          .filter((s): s is NonNullable<typeof s> => s !== undefined)
+      : activeGrade.students;
 
     if (poolStudents.length === 0) return;
 
@@ -184,7 +188,7 @@ const App: React.FC = () => {
       const chosen = poolStudents[Math.floor(Math.random() * poolStudents.length)];
       setSelectedStudentId(chosen.id);
 
-      const needsFridayEntry = activeGrade.requireFridayEntry !== false;
+      const needsFridayEntry = isEasyMode && activeGrade.requireFridayEntry !== false;
       if (needsFridayEntry) {
         setGradeInput(String(chosen.fridayPoints));
         setFridayPointsAtPick(null);
@@ -243,7 +247,10 @@ const App: React.FC = () => {
     const fridayBefore = fridayPointsAtPick;
     const newFridayPoints = applyFridayPointsChange(fridayBefore, livesBefore, result);
     const newLives = applyLivesChange(livesBefore, fridayBefore, result);
-    const newRemaining = activeGrade.remainingStudentIds.filter(id => id !== selectedStudentId);
+    const isEasyMode = appData.pickMode !== 'hard';
+    const newRemaining = isEasyMode
+      ? activeGrade.remainingStudentIds.filter(id => id !== selectedStudentId)
+      : activeGrade.remainingStudentIds;
     let feedback = formatAnswerFeedback(
       student.name,
       result,
@@ -252,7 +259,7 @@ const App: React.FC = () => {
       fridayBefore,
       newFridayPoints
     );
-    if (newRemaining.length === 0) {
+    if (isEasyMode && newRemaining.length === 0) {
       feedback += ' — All students have participated this round!';
     }
 
@@ -270,7 +277,12 @@ const App: React.FC = () => {
 
     setLastFeedback(feedback);
     setParticipationPhase('done');
-  }, [activeGrade, selectedStudentId, participationPhase, fridayPointsAtPick]);
+  }, [activeGrade, selectedStudentId, participationPhase, fridayPointsAtPick, appData.pickMode]);
+
+  const setPickMode = (mode: PickMode) => {
+    setAppData(prev => ({ ...prev, pickMode: mode }));
+    clearPickState();
+  };
 
   const resetRound = () => {
     if (!activeGrade || activeGrade.students.length === 0) return;
@@ -323,7 +335,8 @@ const App: React.FC = () => {
   const totalCount = students.length;
   const participatedCount = totalCount - remainingCount;
   const progress = totalCount > 0 ? (participatedCount / totalCount) * 100 : 0;
-  const roundComplete = totalCount > 0 && remainingCount === 0;
+  const isEasyMode = appData.pickMode !== 'hard';
+  const roundComplete = isEasyMode && totalCount > 0 && remainingCount === 0;
   const hasGroups = appData.gradeGroups.length > 0;
   const participationInProgress = participationPhase === 'asking' || participationPhase === 'grading';
 
@@ -346,7 +359,7 @@ const App: React.FC = () => {
           onUpdateLives={handleUpdateLives}
         />
 
-        {activeGrade && totalCount > 0 && (
+        {activeGrade && totalCount > 0 && isEasyMode && (
           <>
             <Stats
               totalStudents={totalCount}
@@ -355,6 +368,14 @@ const App: React.FC = () => {
             />
             <ProgressBar progress={progress} />
           </>
+        )}
+
+        {activeGrade && totalCount > 0 && (
+          <PickModeToggle
+            mode={appData.pickMode === 'hard' ? 'hard' : 'easy'}
+            onChange={setPickMode}
+            disabled={participationInProgress}
+          />
         )}
 
         {selectedStudent && participationPhase && (
@@ -384,6 +405,7 @@ const App: React.FC = () => {
           isSpinning={isSpinning}
           hasStudents={totalCount > 0}
           roundComplete={roundComplete}
+          showResetRound={isEasyMode}
           disabled={participationInProgress}
         />
 

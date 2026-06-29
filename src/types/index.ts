@@ -23,9 +23,13 @@ export interface GradeGroup {
 
 export type AnswerResult = 'correct' | 'wrong' | 'neutral';
 
+/** Easy = round-based (each student once per round). Hard = random from full roster every pick. */
+export type PickMode = 'easy' | 'hard';
+
 export interface AppData {
   gradeGroups: GradeGroup[];
   activeGradeId: string | null;
+  pickMode?: PickMode;
 }
 
 export interface ParsedStudentRow {

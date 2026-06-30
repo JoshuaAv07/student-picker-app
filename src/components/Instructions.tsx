@@ -7,8 +7,8 @@ const Instructions: React.FC = () => {
       <h3 className="instructions-title">How to use</h3>
       <ol className="instructions-list">
         <li>Enter a name like <strong>Web Design</strong> or <strong>Big Data</strong>, then upload — the group is saved automatically</li>
-        <li>CSV needs a <strong>name</strong> column; other columns are matched by header or column order (1st → Friday pts, 2nd → lives)</li>
-        <li>Lives default to <strong>0</strong> when not in the file; the base-10 bonus rule applies during grading</li>
+        <li>CSV needs a <strong>name</strong> column; other columns map by header or order (Friday pts, lives, attendance pts)</li>
+        <li>Lives default to <strong>0</strong> when not in the file; edit lives and <strong>Att pts</strong> (attendance credit) directly in the roster</li>
         <li>Choose <strong>Easy</strong> (one pick per student per round) or <strong>Hard</strong> (any student can be picked again anytime)</li>
         <li>Click <strong>Pick Student</strong>, set their <strong>Friday pts</strong> (first round only), ask your question, then click <strong>Ready to grade</strong></li>
         <li>At 10 Friday pts: correct adds +1 life; wrong with lives loses 1 life (stays at 10). Wrong with 0 lives drops to 9</li>

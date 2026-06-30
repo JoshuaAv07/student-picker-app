@@ -288,7 +288,11 @@
 
 .roster-header-scores,
 .roster-item-scores {
-  grid-template-columns: 1fr 4.5rem 4.5rem;
+  grid-template-columns: 1fr repeat(3, minmax(3.25rem, 4.5rem));
+}
+
+.roster-header-attendance {
+  color: var(--attendance);
 }
 
 .roster-header-scores span:not(:first-child),
@@ -302,19 +306,38 @@
   padding: 0.35rem 0.45rem;
   border: 1px solid var(--border);
   background: var(--surface);
-  color: var(--accent);
   font-family: var(--font-display);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   text-align: center;
   border-radius: var(--radius);
-  transition: border-color 0.2s var(--ease);
+  transition: border-color 0.2s var(--ease), box-shadow 0.2s var(--ease), background 0.2s var(--ease);
 }
 
 .roster-value-input:focus {
   outline: none;
   border-color: var(--accent);
   box-shadow: 0 0 0 2px var(--accent-dim);
+}
+
+.roster-lives-input {
+  color: var(--accent);
+}
+
+.roster-lives-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-dim);
+}
+
+.roster-attendance-input {
+  color: var(--attendance);
+  border-color: rgba(184, 92, 56, 0.35);
+  background: rgba(184, 92, 56, 0.06);
+}
+
+.roster-attendance-input:focus {
+  border-color: var(--attendance);
+  box-shadow: 0 0 0 2px var(--attendance-dim);
 }
 
 .lives-input {

@@ -3,13 +3,19 @@ import { GraduationCap } from 'lucide-react';
 import { GradeGroup } from '../types';
 import '../styles/GradeManager.css';
 
-interface LivesInputProps {
+interface RosterNumericInputProps {
   value: number;
   onCommit: (value: number) => void;
   ariaLabel: string;
+  inputClassName: string;
 }
 
-const LivesInput: React.FC<LivesInputProps> = ({ value, onCommit, ariaLabel }) => {
+const RosterNumericInput: React.FC<RosterNumericInputProps> = ({
+  value,
+  onCommit,
+  ariaLabel,
+  inputClassName,
+}) => {
   const [draft, setDraft] = useState(String(value));
 
   useEffect(() => {
@@ -41,7 +47,7 @@ const LivesInput: React.FC<LivesInputProps> = ({ value, onCommit, ariaLabel }) =
       type="text"
       inputMode="numeric"
       autoComplete="off"
-      className="roster-value-input"
+      className={inputClassName}
       value={draft}
       onChange={e => handleChange(e.target.value)}
       onBlur={commit}
@@ -60,6 +66,7 @@ interface GradeManagerProps {
   activeGradeId: string | null;
   onSelectGroup: (gradeId: string) => void;
   onUpdateLives: (studentId: string, lives: number) => void;
+  onUpdateAttendancePoints: (studentId: string, attendancePoints: number) => void;
 }
 
 const GradeManager: React.FC<GradeManagerProps> = ({
@@ -67,6 +74,7 @@ const GradeManager: React.FC<GradeManagerProps> = ({
   activeGradeId,
   onSelectGroup,
   onUpdateLives,
+  onUpdateAttendancePoints,
 }) => {
   const activeGrade = gradeGroups.find(g => g.id === activeGradeId) ?? null;
 
@@ -105,6 +113,7 @@ const GradeManager: React.FC<GradeManagerProps> = ({
             <span>Student</span>
             <span>Friday pts</span>
             <span>Lives</span>
+            <span className="roster-header-attendance" title="Attendance points">Att pts</span>
           </div>
           <ul className="roster-list">
             {[...activeGrade.students]
@@ -113,10 +122,17 @@ const GradeManager: React.FC<GradeManagerProps> = ({
                 <li key={student.id} className="roster-item roster-item-scores">
                   <span className="roster-name">{student.name}</span>
                   <span className="roster-points">{student.fridayPoints}</span>
-                  <LivesInput
+                  <RosterNumericInput
                     value={student.lives}
                     onCommit={value => onUpdateLives(student.id, value)}
                     ariaLabel={`Edit lives for ${student.name}`}
+                    inputClassName="roster-value-input roster-lives-input"
+                  />
+                  <RosterNumericInput
+                    value={student.attendancePoints}
+                    onCommit={value => onUpdateAttendancePoints(student.id, value)}
+                    ariaLabel={`Edit attendance points for ${student.name}`}
+                    inputClassName="roster-value-input roster-attendance-input"
                   />
                 </li>
               ))}

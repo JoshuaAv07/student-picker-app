@@ -21,6 +21,9 @@
   --accent-soft: #567d9c;
   --accent-dim: rgba(74, 109, 138, 0.18);
   --accent-on: #fafaf8;
+  --attendance: #b85c38;
+  --attendance-soft: #c96a45;
+  --attendance-dim: rgba(184, 92, 56, 0.18);
   --radius: 2px;
   --font-display: "Archivo Condensed", sans-serif;
   --font-body: "Archivo", sans-serif;

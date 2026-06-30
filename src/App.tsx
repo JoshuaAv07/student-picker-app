@@ -110,7 +110,7 @@ const App: React.FC = () => {
               fridayPointsBaseline: row.fridayPoints,
             };
           }
-          return createStudent(row.name, row.fridayPoints, row.lives);
+          return createStudent(row.name, row.fridayPoints, row.lives, row.attendancePoints);
         });
         const studentIds = students.map(s => s.id);
 
@@ -326,6 +326,19 @@ const App: React.FC = () => {
     );
   };
 
+  const handleUpdateAttendancePoints = (studentId: string, attendancePoints: number) => {
+    if (!activeGrade) return;
+
+    setAppData(prev =>
+      updateGradeInData(prev, activeGrade.id, grade => ({
+        ...grade,
+        students: grade.students.map(s =>
+          s.id === studentId ? { ...s, attendancePoints } : s
+        ),
+      }))
+    );
+  };
+
   const selectedStudent = selectedStudentId && activeGrade
     ? getStudentById(activeGrade, selectedStudentId)
     : undefined;
@@ -357,6 +370,7 @@ const App: React.FC = () => {
           activeGradeId={appData.activeGradeId}
           onSelectGroup={setActiveGradeId}
           onUpdateLives={handleUpdateLives}
+          onUpdateAttendancePoints={handleUpdateAttendancePoints}
         />
 
         {activeGrade && totalCount > 0 && isEasyMode && (

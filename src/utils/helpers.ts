@@ -8,6 +8,21 @@ const DEFAULT_LIVES = 0;
 
 const NAME_HEADERS = ['name', 'student', 'student name', 'nombre', 'full name'];
 const LIVES_HEADERS = ['lives', 'life', 'vidas', 'vida', 'hearts', 'heart'];
+const ATTENDANCE_HEADERS = [
+  'attendance points',
+  'attendance pts',
+  'attendance pt',
+  'att pts',
+  'att pt',
+  'attendance',
+  'inasistencias',
+  'inasistencia',
+  'absences',
+  'absence',
+  'owed absences',
+  'faltas',
+  'falta',
+];
 const FRIDAY_POINTS_HEADERS = [
   'friday points',
   'friday_points',
@@ -36,6 +51,15 @@ const isLivesHeader = (header: string): boolean => {
     || normalized.includes('heart');
 };
 
+const isAttendanceHeader = (header: string): boolean => {
+  const normalized = normalizeHeader(header);
+  return ATTENDANCE_HEADERS.includes(normalized)
+    || normalized.includes('attendance')
+    || normalized.includes('inasist')
+    || normalized.includes('falta')
+    || normalized.includes('absence');
+};
+
 const isFridayHeader = (header: string): boolean => {
   const normalized = normalizeHeader(header);
   return FRIDAY_POINTS_HEADERS.includes(normalized)
@@ -56,16 +80,23 @@ const findNameColumn = (headers: string[]): number => {
 const resolveCsvColumns = (headers: string[], nameIndex: number) => {
   let fridayCol = -1;
   let livesCol = -1;
+  let attendanceCol = -1;
 
   headers.forEach((header, index) => {
     if (index === nameIndex) return;
-    if (isLivesHeader(header)) livesCol = index;
+    if (isAttendanceHeader(header)) attendanceCol = index;
+    else if (isLivesHeader(header)) livesCol = index;
     else if (isFridayHeader(header)) fridayCol = index;
   });
 
   const unmatched = headers
     .map((_, index) => index)
-    .filter(index => index !== nameIndex && index !== fridayCol && index !== livesCol);
+    .filter(index =>
+      index !== nameIndex
+      && index !== fridayCol
+      && index !== livesCol
+      && index !== attendanceCol
+    );
 
   if (fridayCol < 0 && unmatched.length > 0) {
     fridayCol = unmatched.shift()!;
@@ -73,8 +104,11 @@ const resolveCsvColumns = (headers: string[], nameIndex: number) => {
   if (livesCol < 0 && unmatched.length > 0) {
     livesCol = unmatched.shift()!;
   }
+  if (attendanceCol < 0 && unmatched.length > 0) {
+    attendanceCol = unmatched.shift()!;
+  }
 
-  return { fridayCol, livesCol };
+  return { fridayCol, livesCol, attendanceCol };
 };
 
 export const createId = (): string =>
@@ -83,11 +117,13 @@ export const createId = (): string =>
 export const createStudent = (
   name: string,
   fridayPoints = 0,
-  lives = DEFAULT_LIVES
+  lives = DEFAULT_LIVES,
+  attendancePoints = 0
 ): Student => ({
   id: createId(),
   name: name.trim(),
   lives,
+  attendancePoints,
   fridayPoints,
   fridayPointsBaseline: fridayPoints,
 });
@@ -191,7 +227,7 @@ export const parseCSV = (text: string): ParsedStudentRow[] => {
     throw new Error('CSV must contain a "name" column');
   }
 
-  const { fridayCol, livesCol } = resolveCsvColumns(headers, nameIndex);
+  const { fridayCol, livesCol, attendanceCol } = resolveCsvColumns(headers, nameIndex);
 
   return lines.slice(1)
     .map(line => {
@@ -202,6 +238,7 @@ export const parseCSV = (text: string): ParsedStudentRow[] => {
         name,
         fridayPoints: fridayCol >= 0 ? parsePoints(values[fridayCol]) : 0,
         lives: livesCol >= 0 ? parsePoints(values[livesCol]) : DEFAULT_LIVES,
+        attendancePoints: attendanceCol >= 0 ? parsePoints(values[attendanceCol]) : 0,
       };
     })
     .filter((row): row is ParsedStudentRow => row !== null);
@@ -220,11 +257,20 @@ export const parseTXT = (text: string): ParsedStudentRow[] => {
       const commaSplit = trimmed.split(',').map(s => s.trim());
       const colonSplit = trimmed.split(':');
 
+      if (commaSplit.length >= 4) {
+        return {
+          name: commaSplit[0],
+          fridayPoints: parsePoints(commaSplit[1]),
+          lives: parsePoints(commaSplit[2]),
+          attendancePoints: parsePoints(commaSplit[3]),
+        };
+      }
       if (commaSplit.length >= 3) {
         return {
           name: commaSplit[0],
           fridayPoints: parsePoints(commaSplit[1]),
           lives: parsePoints(commaSplit[2]),
+          attendancePoints: 0,
         };
       }
       if (commaSplit.length >= 2) {
@@ -232,6 +278,7 @@ export const parseTXT = (text: string): ParsedStudentRow[] => {
           name: commaSplit[0],
           fridayPoints: parsePoints(commaSplit[1]),
           lives: DEFAULT_LIVES,
+          attendancePoints: 0,
         };
       }
       if (colonSplit.length >= 2) {
@@ -239,19 +286,21 @@ export const parseTXT = (text: string): ParsedStudentRow[] => {
           name: colonSplit[0].trim(),
           fridayPoints: parsePoints(colonSplit[1]),
           lives: DEFAULT_LIVES,
+          attendancePoints: 0,
         };
       }
-      return { name: trimmed, fridayPoints: 0, lives: DEFAULT_LIVES };
+      return { name: trimmed, fridayPoints: 0, lives: DEFAULT_LIVES, attendancePoints: 0 };
     })
     .filter(row => row.name.length > 0);
 };
 
-const normalizeStudent = (student: Student & { points?: number }): Student => {
+const normalizeStudent = (student: Student & { points?: number; inasistencias?: number }): Student => {
   const fridayPoints = student.fridayPoints ?? student.points ?? 0;
   return {
     id: student.id,
     name: student.name,
     lives: student.lives ?? DEFAULT_LIVES,
+    attendancePoints: student.attendancePoints ?? student.inasistencias ?? 0,
     fridayPoints,
     fridayPointsBaseline: typeof student.fridayPointsBaseline === 'number'
       ? student.fridayPointsBaseline

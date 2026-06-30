@@ -2,6 +2,8 @@ export interface Student {
   id: string;
   name: string;
   lives: number;
+  /** Owed attendance credit from marking errors */
+  attendancePoints: number;
   fridayPoints: number;
   /** Value from CSV upload — restored by Reset Friday Points */
   fridayPointsBaseline: number;
@@ -36,4 +38,5 @@ export interface ParsedStudentRow {
   name: string;
   lives: number;
   fridayPoints: number;
+  attendancePoints: number;
 }

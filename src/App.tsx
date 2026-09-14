@@ -188,7 +188,7 @@ const App: React.FC = () => {
       const chosen = poolStudents[Math.floor(Math.random() * poolStudents.length)];
       setSelectedStudentId(chosen.id);
 
-      const needsFridayEntry = isEasyMode && activeGrade.requireFridayEntry !== false;
+      const needsFridayEntry = activeGrade.requireFridayEntry !== false;
       if (needsFridayEntry) {
         setGradeInput(String(chosen.fridayPoints));
         setFridayPointsAtPick(null);
@@ -304,13 +304,13 @@ const App: React.FC = () => {
     setAppData(prev =>
       updateGradeInData(prev, activeGrade.id, grade => ({
         ...grade,
-        students: grade.students.map(s => ({ ...s, fridayPoints: 0 })),
+        students: grade.students.map(s => ({ ...s, fridayPoints: 0, lives: 0 })),
         remainingStudentIds: shuffleIds(grade.students.map(s => s.id)),
         requireFridayEntry: true,
       }))
     );
     clearPickState();
-    setLastFeedback('Friday points reset to 0. Lives unchanged.');
+    setLastFeedback('Friday points and lives reset to 0.');
   };
 
   const handleUpdateLives = (studentId: string, lives: number) => {
